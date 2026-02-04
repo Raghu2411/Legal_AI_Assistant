@@ -1,0 +1,42 @@
+# # Core app
+# streamlit>=1.31.0
+# python-dotenv>=1.0.0
+
+# # LangChain ecosystem (PINNED for stability)
+# langchain==0.2.16
+# langchain-community==0.2.16
+# langchain-openai==0.1.23
+# langchain-chroma==0.1.4
+
+# # Vector database
+# chromadb>=0.4.24
+
+# # Document loading (PDF / DOCX)
+# unstructured[pdf,docx]>=0.12.5
+# pypdf>=4.0.0
+# python-docx>=1.1.0
+
+# # Tokenization (used internally by OpenAI + LangChain)
+# tiktoken>=0.6.0
+
+# Core app
+streamlit>=1.31.0
+python-dotenv>=1.0.0
+
+# LangChain ecosystem (PINNED for stability)
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-chroma==0.1.4
+langchain-groq>=0.1.0  # Groq for LLM
+langchain-huggingface>=0.0.1  # HuggingFace for embeddings
+
+# Vector database
+chromadb>=0.4.24
+
+# Document loading (PDF / DOCX)
+unstructured[pdf,docx]>=0.12.5
+pypdf>=4.0.0
+python-docx>=1.1.0
+
+# Embeddings
+sentence-transformers>=2.2.0  # Required for HuggingFace embeddings
