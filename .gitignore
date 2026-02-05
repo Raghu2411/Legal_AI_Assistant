@@ -10,3 +10,14 @@ project_checklist.docx
 Saira-Rac.txt
 .env
 sample.ipynb
+chromadb_storage/
+temp_*
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+venv/
+env/
+ENV/

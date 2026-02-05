@@ -1,90 +1,6 @@
-# import streamlit as st
-# import os
-# from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-# from langchain_chroma import Chroma
-# from langchain_community.document_loaders import UnstructuredFileLoader
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-# from langchain.chains.retrieval_qa.base import RetrievalQA
-# from dotenv import load_dotenv
-
-# load_dotenv()
-
-# # --- UI Setup ---
-# st.set_page_config(page_title="Legal AI Analyst", layout="wide")
-# st.title("⚖️ Legal Document AI Analyst")
-# st.markdown("Upload a legal PDF/DOCX to extract clauses, summarize, or explain.")
-
-# with st.sidebar:
-#     st.header("Upload Document")
-#     uploaded_file = st.file_uploader("Choose a PDF or DOCX file", type=["pdf", "docx"])
-#     process_button = st.button("Analyze Document")
-
-# # --- Logic ---
-# if uploaded_file and process_button:
-#     with st.spinner("Processing legal document..."):
-#         # 1. Save file locally
-#         temp_path = f"temp_{uploaded_file.name}"
-#         with open(temp_path, "wb") as f:
-#             f.write(uploaded_file.getbuffer())
-
-#         # 2. Load and Split
-#         loader = UnstructuredFileLoader(temp_path)
-#         docs = loader.load()
-        
-#         # Legal docs need smaller chunks to keep clause context together
-#         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
-#         splits = text_splitter.split_documents(docs)
-
-#         # 3. Create Vector Store
-#         vectorstore = Chroma.from_documents(
-#             documents=splits, 
-#             embedding=OpenAIEmbeddings()
-#         )
-        
-#         # 4. Initialize Retrieval Chain
-#         llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
-#         st.session_state.qa_chain = RetrievalQA.from_chain_type(
-#             llm=llm,
-#             chain_type="stuff",
-#             retriever=vectorstore.as_retriever(),
-#             return_source_documents=True
-#         )
-#         st.success("Document Indexed! You can now ask questions.")
-
-# # --- Chat Interface ---
-# if "messages" not in st.session_state:
-#     st.session_state.messages = []
-
-# # Display chat history
-# for message in st.session_state.messages:
-#     with st.chat_message(message["role"]):
-#         st.markdown(message["content"])
-
-# # Chat Input
-# if prompt := st.chat_input("Ex: 'Summarize the termination clause' or 'Are there any non-competes?'"):
-#     st.session_state.messages.append({"role": "user", "content": prompt})
-#     with st.chat_message("user"):
-#         st.markdown(prompt)
-
-#     if "qa_chain" in st.session_state:
-#         with st.chat_message("assistant"):
-#             result = st.session_state.qa_chain.invoke({"query": prompt})
-#             answer = result["result"]
-#             sources = result["source_documents"]
-            
-#             st.markdown(answer)
-            
-#             # Show Citations for legal transparency
-#             with st.expander("View Source Passages"):
-#                 for i, doc in enumerate(sources):
-#                     st.info(f"Source {i+1}: {doc.page_content[:300]}...")
-            
-#             st.session_state.messages.append({"role": "assistant", "content": answer})
-#     else:
-#         st.error("Please upload and process a document first!")
-
 import streamlit as st
 import os
+import hashlib
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 from langchain_chroma import Chroma
@@ -95,83 +11,116 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- UI Setup ---
+# UI Setup
 st.set_page_config(page_title="Legal AI Analyst", layout="wide")
 st.title("⚖️ Legal Document AI Analyst")
-st.markdown("Upload a legal PDF/DOCX to extract clauses, summarize, or explain.")
+st.markdown("Upload multiple documents to test extraction and analysis.")
+
+# Initialize Session States
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 with st.sidebar:
-    st.header("Upload Document")
-    uploaded_file = st.file_uploader("Choose a PDF or DOCX file", type=["pdf", "docx"])
-    process_button = st.button("Analyze Document")
+    st.header("📁 Document Management")
+    
+    if "current_doc" in st.session_state:
+        st.success(f"📄 Active: **{st.session_state.current_doc}**")
+    
+    st.divider()
+    
+    uploaded_file = st.file_uploader("Upload PDF or DOCX", type=["pdf", "docx"])
+    process_button = st.button("Analyze & Switch Context")
+    
+    st.divider()
+    st.info("💡 Each time you click 'Analyze', the AI switches its focus to the new document.")
 
-# --- Logic ---
+
 if uploaded_file and process_button:
-    with st.spinner("Processing legal document..."):
-        # 1. Save file locally
+    # Clear previous session messages
+    st.session_state.messages = []
+    
+    with st.spinner(f"Processing {uploaded_file.name}..."):
+        storage_dir = "./chromadb_storage"
+        os.makedirs(storage_dir, exist_ok=True)
+        
+        # New unique path for this file
+        file_hash = hashlib.md5(uploaded_file.name.encode()).hexdigest()[:8]
+        persist_directory = os.path.join(storage_dir, f"chroma_db_{file_hash}")
+        
         temp_path = f"temp_{uploaded_file.name}"
         with open(temp_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
 
-        # 2. Load and Split
-        loader = UnstructuredFileLoader(temp_path)
-        docs = loader.load()
-        
-        # Legal docs need smaller chunks to keep clause context together
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
-        splits = text_splitter.split_documents(docs)
+        try:
+            # Document Processing Pipeline
+            loader = UnstructuredFileLoader(temp_path)
+            docs = loader.load()
+            
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000, 
+                chunk_overlap=150
+            )
+            splits = text_splitter.split_documents(docs)
 
-        # 3. Create Vector Store with HuggingFace embeddings (free, local)
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
-        )
-        vectorstore = Chroma.from_documents(
-            documents=splits, 
-            embedding=embeddings
-        )
-        
-        # 4. Initialize Retrieval Chain with Groq
-        llm = ChatGroq(
-            model="llama-3.3-70b-versatile",  # or "mixtral-8x7b-32768" for faster responses
-            temperature=0,
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        )
-        st.session_state.qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=vectorstore.as_retriever(),
-            return_source_documents=True
-        )
-        st.success("Document Indexed! You can now ask questions.")
+            # Embedding & Vector Store
+            embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2"
+            )
+            
+            vectorstore = Chroma.from_documents(
+                documents=splits, 
+                embedding=embeddings,
+                persist_directory=persist_directory
+            )
 
-# --- Chat Interface ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+            # Retrieval Chain Setup
+            llm = ChatGroq(
+                model="llama-3.3-70b-versatile",
+                temperature=0,
+                groq_api_key=os.getenv("GROQ_API_KEY")
+            )
+            
+            st.session_state.qa_chain = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
+                return_source_documents=True
+            )
+            
+            st.session_state.current_doc = uploaded_file.name
+            st.success(f"Ready to analyze: {uploaded_file.name}")
+            
+        except Exception as e:
+            st.error(f"Error processing document: {e}")
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Chat Interface
+if "qa_chain" in st.session_state:
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-# Chat Input
-if prompt := st.chat_input("Ex: 'Summarize the termination clause' or 'Are there any non-competes?'"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # Handle user input
+    if prompt := st.chat_input(f"Ask about {st.session_state.current_doc}..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    if "qa_chain" in st.session_state:
         with st.chat_message("assistant"):
-            result = st.session_state.qa_chain.invoke({"query": prompt})
-            answer = result["result"]
-            sources = result["source_documents"]
-            
-            st.markdown(answer)
-            
-            # Show Citations for legal transparency
-            with st.expander("View Source Passages"):
-                for i, doc in enumerate(sources):
-                    st.info(f"Source {i+1}: {doc.page_content[:300]}...")
-            
-            st.session_state.messages.append({"role": "assistant", "content": answer})
-    else:
-        st.error("Please upload and process a document first!")
+            with st.spinner("Reviewing document..."):
+                result = st.session_state.qa_chain.invoke({"query": prompt})
+                answer = result["result"]
+                sources = result["source_documents"]
+                
+                st.markdown(answer)
+                
+                with st.expander("View Legal Citations"):
+                    for i, doc in enumerate(sources):
+                        st.info(f"Reference {i+1}: {doc.page_content[:400]}...")
+                
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+else:
+    st.info("👋 Welcome! Please upload a legal document in the sidebar to begin testing.")
