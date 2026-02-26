@@ -16,6 +16,14 @@ export default async function AdminDashboard() {
     .from("profiles")
     .select("*", { count: "exact", head: true })
 
+  // FR-011: Fetch logs from the last 24 hours
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  
+  const { count: recentLogCount } = await supabase
+    .from("logs")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", twentyFourHoursAgo)
+
   const { data: rawLogs } = await supabase
     .from("logs")
     .select("*")
@@ -47,6 +55,7 @@ export default async function AdminDashboard() {
       initialLogs={latestLogs || []}
       userEmail={user.email || ""}
       currentVersion={latestPlaybook?.version || 0}
+      recentLogCount={recentLogCount || 0}
     />
   )
 }

@@ -21,15 +21,23 @@ interface DashboardProps {
   initialLogs: any[]
   userEmail: string
   currentVersion: number
+  recentLogCount: number
 }
 
-export function DashboardContent({ initialUserCount, initialLogs, userEmail, currentVersion }: DashboardProps) {
+export function DashboardContent({ 
+  initialUserCount, 
+  initialLogs, 
+  userEmail, 
+  currentVersion,
+  recentLogCount
+}: DashboardProps) {
   const [userCount, setUserCount] = useState(initialUserCount)
   const [logs, setLogs] = useState(initialLogs)
+  const [recentEvents, setRecentEvents] = useState(recentLogCount)
   const supabase = createClient()
 
   useEffect(() => {
-    // 1. Subscribe to profile changes for user count
+    // ... rest of useEffect ...
     const profileChannel = supabase
       .channel('profile-changes')
       .on(
@@ -98,9 +106,9 @@ export function DashboardContent({ initialUserCount, initialLogs, userEmail, cur
     },
     {
       title: "System Events",
-      value: "90 Days",
+      value: recentEvents,
       icon: History,
-      description: "Log retention period",
+      description: "Last 24 hours activity",
     },
     {
       title: "AI Inquiries",
