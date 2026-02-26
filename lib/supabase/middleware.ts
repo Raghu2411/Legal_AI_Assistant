@@ -27,7 +27,21 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // IMPORTANT: Avoid calling getUser() multiple times in one request if possible.
+  // We wrap in try-catch because if a refresh token is invalid/missing, 
+  // getUser() might throw or log an error we want to handle gracefully.
+  let user = null
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    if (error) {
+      // Log error but don't crash
+      console.warn('Middleware Auth User error:', error.message)
+    }
+    user = data?.user
+  } catch (error) {
+    // If we hit an auth error, we treat the user as logged out
+    console.error('Middleware Auth Error:', error)
+  }
 
   const url = new URL(request.url)
   const path = url.pathname
@@ -36,7 +50,7 @@ export async function updateSession(request: NextRequest) {
   if (path === '/login' || path.startsWith('/auth/')) {
     if (user && path === '/login') {
       // If logged in, redirect away from login page
-      return await redirectBasedOnRole(supabase, user.id, request)
+      return await redirectBasedOnRole(supabase, user.id, request, supabaseResponse)
     }
     return supabaseResponse
   }
@@ -44,14 +58,19 @@ export async function updateSession(request: NextRequest) {
   // Protected paths logic
   if (!user) {
     const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
+    // Create a new redirect response but copy the updated cookies from supabaseResponse
+    const redirectResponse = NextResponse.redirect(loginUrl)
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return redirectResponse
   }
 
   // Role-based protection
-  return await redirectBasedOnRole(supabase, user.id, request)
+  return await redirectBasedOnRole(supabase, user.id, request, supabaseResponse)
 }
 
-async function redirectBasedOnRole(supabase: any, userId: string, request: NextRequest) {
+async function redirectBasedOnRole(supabase: any, userId: string, request: NextRequest, supabaseResponse: NextResponse) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -62,11 +81,16 @@ async function redirectBasedOnRole(supabase: any, userId: string, request: NextR
   const path = url.pathname
 
   if (!profile) {
-    // Missing profile edge case (User Story 2 / Clarification)
+    // Missing profile edge case
     if (path !== '/access-denied') {
-        return NextResponse.redirect(new URL('/access-denied', request.url))
+      const accessDeniedUrl = new URL('/access-denied', request.url)
+      const redirectResponse = NextResponse.redirect(accessDeniedUrl)
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      return redirectResponse
     }
-    return NextResponse.next()
+    return supabaseResponse
   }
 
   const role = profile.role
@@ -74,18 +98,24 @@ async function redirectBasedOnRole(supabase: any, userId: string, request: NextR
   // Admin access
   if (path.startsWith('/admin')) {
     if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      const dashboardUrl = new URL('/dashboard', request.url)
+      const redirectResponse = NextResponse.redirect(dashboardUrl)
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      return redirectResponse
     }
   }
 
-  // Lawyer access (Admins can access dashboard too per spec 2.2)
-  if (path === '/login' || path === '/') {
-    if (role === 'admin') {
-        return NextResponse.redirect(new URL('/admin', request.url))
-    } else {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+  // Lawyer access / Default redirects
+  if (path === '/' || path === '/login') {
+    const targetPath = role === 'admin' ? '/admin' : '/dashboard'
+    const redirectResponse = NextResponse.redirect(new URL(targetPath, request.url))
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return redirectResponse
   }
 
-  return NextResponse.next()
+  return supabaseResponse
 }
