@@ -1,19 +1,19 @@
 <!--
 Sync Impact Report:
-- Version change: 1.1.0 -> 2.0.0
+- Version change: 2.0.0 -> 3.0.0
 - List of modified principles:
-  - IV. Lawyer Role Default & RBAC -> VI. Client Ownership & RBAC (Expanded to include ownership and global admin access)
-  - V. Admin Access & Route Protection -> VI. Client Ownership & RBAC (Merged)
-  - VI. Admin Resource Management -> Removed (Superseded by Step 3 domain rules)
-  - VII. Audit Integrity & Reassignment -> IX. Audit Integrity & Reassignment (Re-numbered)
+  - Added X. Single Embedding Model (mxbai-embed-large-v1)
+  - Added XI. Strict Namespace Isolation (client_id filtering)
+  - Added XII. Query Prefix Requirement ("Represent this sentence...")
+  - Added XIII. Lifecycle Synchronization (Embedding/Document parity)
+  - Added XIV. Auth-Gated Processing (Role verification)
+  - Added XV. Failure Atomicity (Batch rollback)
+  - Added XVI. Idempotency (processDocument re-run safety)
 - Added sections:
-  - IV. Data Isolation via RLS (Promoted to core principle)
-  - V. Standardized Case Identification (lawyerName-XXXX)
-  - VII. Mandatory Document Categorization
-  - VIII. Restricted File Formats (PDF, DOCX, TXT)
+  - Principles X through XVI covering RAG Infrastructure.
 - Templates requiring updates:
-  - .specify/templates/plan-template.md (✅ aligned with Principle III)
-  - .specify/templates/tasks-template.md (✅ aligned with Principle III)
+  - .specify/templates/plan-template.md (✅ aligned)
+  - .specify/templates/tasks-template.md (✅ aligned)
 - Follow-up TODOs: None
 -->
 
@@ -51,6 +51,27 @@ Document uploads are strictly restricted to PDF, DOCX, and TXT formats. While no
 ### IX. Audit Integrity & Reassignment
 To preserve audit integrity, the deletion of a 'lawyer' account is a restricted operation that MUST trigger a mandatory reassignment of all their associated clients and documents to an 'admin' account. Data orphaned by deletion is prohibited.
 
+### X. Single Embedding Model
+The system must use ONLY the 'mixedbread-ai/mxbai-embed-large-v1' model (1024 dimensions) for ALL vector embeddings across the entire project. No other embedding model may be used or substituted.
+
+### XI. Strict Namespace Isolation
+A retrieval query for a specific client MUST only return vectors where (client_id = :target_client_id OR client_id IS NULL). A query must NEVER return vectors belonging to a different client_id. This is the primary data security law for the RAG system.
+
+### XII. Query Prefix Requirement
+Every text passed to the embedding model for a SEARCH query (not during ingestion) must be prefixed exactly with: "Represent this sentence for searching relevant passages: ". Ingestion embeddings must NOT use this prefix.
+
+### XIII. Lifecycle Synchronization
+Embeddings must be generated immediately and atomically upon successful document upload. All embedding rows for a document must be purged immediately and completely upon document deletion. A document must never exist in storage without corresponding embeddings, and embeddings must never exist without a corresponding document record.
+
+### XIV. Auth-Gated Processing
+The embedding pipeline must verify the authenticated user's role before processing. Only a 'lawyer' (for their own client's documents) or an 'admin' (for Playbook documents) may trigger embedding generation. Unauthenticated or unauthorized calls must be rejected immediately.
+
+### XV. Failure Atomicity
+If embedding generation fails for any chunk, the entire batch for that document must be rolled back. No partial embeddings may exist for a document. The document's status in the `documents` table must be updated to reflect success or failure.
+
+### XVI. Idempotency
+The processDocument function must be idempotent. If called twice for the same document_id, it must delete existing embeddings first and regenerate — never produce duplicate vectors.
+
 ## Governance
 
 This constitution governs the SAI-Legal project. All implementation must adhere to these principles. Any deviation must be documented as a "Violation" in the implementation plan.
@@ -60,4 +81,4 @@ Amendments to this constitution require a version bump. Semantic versioning is u
 - MINOR: New principle/section added or materially expanded guidance.
 - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
 
-**Version**: 2.0.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-02-26
+**Version**: 3.0.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-02-26

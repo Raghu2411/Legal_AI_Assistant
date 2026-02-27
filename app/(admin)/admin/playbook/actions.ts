@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient, logEvent } from "@/lib/supabase/admin"
 import { extractTextFromFile, normalizeContext } from "@/lib/playbook/parser"
+import { processDocument } from "@/lib/ai/vector-service"
 import { revalidatePath } from "next/cache"
 
 export async function uploadPlaybook(formData: FormData) {
@@ -34,6 +35,13 @@ export async function uploadPlaybook(formData: FormData) {
   const buffer = Buffer.from(await file.arrayBuffer())
   const extractedText = await extractTextFromFile(buffer, file.type || extension)
   const normalizedText = normalizeContext(extractedText)
+  
+  console.log(`uploadPlaybook: Normalized text length: ${normalizedText.length}`);
+
+  if (normalizedText.length === 0) {
+    console.error("uploadPlaybook: No text could be extracted from the file.");
+    // We still allow the upload, but we should probably warn or handle this state
+  }
 
   // 3. Upload to Storage
   const { error: storageError } = await adminSupabase.storage
@@ -45,7 +53,7 @@ export async function uploadPlaybook(formData: FormData) {
   }
 
   // 4. Save metadata to DB
-  const { error: dbError } = await supabase
+  const { data: insertedPlaybook, error: dbError } = await supabase
     .from("playbooks")
     .insert({
       file_path: filePath,
@@ -54,10 +62,17 @@ export async function uploadPlaybook(formData: FormData) {
       version: nextVersion,
       created_by: user.id
     })
+    .select("id")
+    .single()
 
   if (dbError) {
     return { error: dbError.message }
   }
+
+  // 5. Trigger vectorization asynchronously
+  processDocument(insertedPlaybook.id, null, normalizedText, "playbooks").catch(e => {
+    console.error("Vectorization failed:", e)
+  })
 
   await logEvent(user.id, "PLAYBOOK_UPLOAD", `Uploaded playbook version ${nextVersion} (${file.name})`)
 

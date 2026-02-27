@@ -40,7 +40,7 @@ export default async function LawyerClientsPage() {
         <Users className="h-12 w-12 text-muted-foreground" />
         <div>
           <h2 className="text-2xl font-semibold">No Clients Found</h2>
-          <p className="text-muted-foreground">You haven't onboarded any clients yet. Start by adding your first client.</p>
+          <p className="text-muted-foreground">You haven&apos;t onboarded any clients yet. Start by adding your first client.</p>
         </div>
         <Button asChild>
           <Link href="/clients/new">

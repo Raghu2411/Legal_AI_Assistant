@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { clientSchema } from "./schemas"
+import { extractTextFromFile, normalizeContext } from "@/lib/playbook/parser"
+import { processDocument } from "@/lib/ai/vector-service"
 
 // T007: Implement createClient server action
 export async function createClientAction(formData: FormData) {
@@ -19,7 +21,7 @@ export async function createClientAction(formData: FormData) {
   const validated = clientSchema.safeParse({ name, case_type })
 
   if (!validated.success) {
-    return { error: validated.error.errors[0].message }
+    return { error: validated.error.issues[0].message }
   }
 
   const { data, error } = await supabase
@@ -174,16 +176,26 @@ export async function uploadDocumentAction(
     return { error: "Invalid file type. Only PDF, DOCX, and TXT are allowed." }
   }
 
+  // 1. Extract text first (fail fast if unreadable)
+  let normalizedText = ""
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const extractedText = await extractTextFromFile(buffer, file.type || fileExtension)
+    normalizedText = normalizeContext(extractedText)
+  } catch (e: any) {
+    return { error: `Failed to read document: ${e.message}` }
+  }
+
   const filePath = `${clientId}/${crypto.randomUUID()}_${file.name}`
 
-  // 1. Upload to Supabase Storage
+  // 2. Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
     .from("client-vaults")
     .upload(filePath, file)
 
   if (uploadError) return { error: uploadError.message }
 
-  // 2. Insert record into documents table
+  // 3. Insert record into documents table
   const { data, error: dbError } = await supabase
     .from("documents")
     .insert({
@@ -201,6 +213,11 @@ export async function uploadDocumentAction(
     await supabase.storage.from("client-vaults").remove([filePath])
     return { error: dbError.message }
   }
+
+  // 4. Trigger vectorization asynchronously
+  processDocument(data.id, clientId, normalizedText).catch(e => {
+    console.error("Document vectorization failed:", e)
+  })
 
   // Audit logging
   await supabase.from("logs").insert({

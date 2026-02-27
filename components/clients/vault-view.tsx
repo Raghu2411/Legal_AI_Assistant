@@ -14,6 +14,7 @@ import { Download, Trash2, FileIcon, Clock } from "lucide-react"
 import { deleteDocumentAction } from "@/lib/clients/actions"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { VectorStatusBadge, VectorStatus } from "@/components/ui/vector-status-badge"
 
 interface Document {
   id: string
@@ -21,6 +22,7 @@ interface Document {
   file_name: string
   doc_type: string
   uploaded_at: string
+  vector_status?: string
 }
 
 export function VaultView({ 
@@ -76,6 +78,7 @@ export function VaultView({
             <TableHead>File Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Uploaded</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -96,6 +99,9 @@ export function VaultView({
                   <Clock className="h-3 w-3" />
                   {new Date(doc.uploaded_at).toLocaleDateString()}
                 </div>
+              </TableCell>
+              <TableCell>
+                <VectorStatusBadge status={doc.vector_status as VectorStatus} />
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
@@ -121,7 +127,7 @@ export function VaultView({
           ))}
           {documents.length === 0 && (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                 No documents in vault.
               </TableCell>
             </TableRow>

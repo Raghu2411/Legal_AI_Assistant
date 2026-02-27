@@ -98,7 +98,7 @@ export function PlaybookForm({ initialRules, currentVersion }: { initialRules: s
               Legal Playbook (PDF/DOCX)
             </CardTitle>
             <CardDescription>
-              Upload the firm's detailed legal playbook. This will be parsed and used as AI context.
+              Upload the firm&apos;s detailed legal playbook. This will be parsed and used as AI context.
               Supports PDF and DOCX formats.
               Current Version: <span className="font-bold text-primary">v{currentVersion}</span>
             </CardDescription>
@@ -137,7 +137,7 @@ export function PlaybookForm({ initialRules, currentVersion }: { initialRules: s
                 <FormItem>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter the firm's Golden Rules..."
+                      placeholder="Enter the firm&apos;s Golden Rules..."
                       className="min-h-[200px] font-mono text-sm"
                       {...field}
                     />

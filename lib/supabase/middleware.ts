@@ -15,12 +15,12 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set({ name, value, ...options }))
           supabaseResponse = NextResponse.next({
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set({ name, value, ...options })
           )
         },
       },
@@ -61,7 +61,7 @@ export async function updateSession(request: NextRequest) {
     // Create a new redirect response but copy the updated cookies from supabaseResponse
     const redirectResponse = NextResponse.redirect(loginUrl)
     supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      redirectResponse.cookies.set(cookie)
     })
     return redirectResponse
   }
@@ -86,7 +86,7 @@ async function redirectBasedOnRole(supabase: any, userId: string, request: NextR
       const accessDeniedUrl = new URL('/access-denied', request.url)
       const redirectResponse = NextResponse.redirect(accessDeniedUrl)
       supabaseResponse.cookies.getAll().forEach(cookie => {
-        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+        redirectResponse.cookies.set(cookie)
       })
       return redirectResponse
     }
@@ -101,7 +101,7 @@ async function redirectBasedOnRole(supabase: any, userId: string, request: NextR
       const dashboardUrl = new URL('/dashboard', request.url)
       const redirectResponse = NextResponse.redirect(dashboardUrl)
       supabaseResponse.cookies.getAll().forEach(cookie => {
-        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+        redirectResponse.cookies.set(cookie)
       })
       return redirectResponse
     }
@@ -112,7 +112,7 @@ async function redirectBasedOnRole(supabase: any, userId: string, request: NextR
     const targetPath = role === 'admin' ? '/admin' : '/dashboard'
     const redirectResponse = NextResponse.redirect(new URL(targetPath, request.url))
     supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      redirectResponse.cookies.set(cookie)
     })
     return redirectResponse
   }

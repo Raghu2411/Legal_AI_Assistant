@@ -8,37 +8,30 @@ export async function extractTextFromFile(buffer: Buffer, fileType: string): Pro
   
   try {
     if (fileType === 'application/pdf' || fileType.endsWith('.pdf')) {
-      // PDF Parsing Logic
-      let pdf;
-      try {
-        pdf = require('pdf-parse');
-      } catch (e) {
-        console.warn('pdf-parse primary require failed, trying lib/pdf-parse.js');
-        pdf = require('pdf-parse/lib/pdf-parse.js');
-      }
+      // PDF Parsing Logic using classic pdf-parse (v1.1.1)
+      // We use a dynamic require to avoid bundling issues
+      const pdf = require('pdf-parse');
       
-      let parseFunc = pdf;
-      if (typeof pdf !== 'function') {
-        if (pdf.default && typeof pdf.default === 'function') {
-          parseFunc = pdf.default;
-        } else if (pdf.PDFParse && typeof pdf.PDFParse === 'function') {
-          parseFunc = pdf.PDFParse;
-        }
-      }
-
-      if (typeof parseFunc !== 'function') {
-        throw new Error(`pdf-parse is not a function (type: ${typeof parseFunc})`);
-      }
+      console.log('extractTextFromFile: Calling pdf-parse (v1.1.1)...');
+      const data = await pdf(buffer);
       
-      const data = await parseFunc(buffer);
-      return data.text || "";
+      const extractedText = data?.text || "";
+      console.log('extractTextFromFile: PDF extraction complete. Text length:', extractedText.length);
+      return extractedText;
     } 
     
     if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileType.endsWith('.docx')) {
       // DOCX Parsing Logic using Mammoth
       const result = await mammoth.extractRawText({ buffer });
-      console.log('extractTextFromFile: Successfully extracted DOCX text, length:', result.value?.length);
-      return result.value;
+      const extractedText = result.value || "";
+      console.log('extractTextFromFile: Successfully extracted DOCX text, length:', extractedText.length);
+      return extractedText;
+    }
+
+    if (fileType === 'text/plain' || fileType.endsWith('.txt')) {
+      const extractedText = buffer.toString('utf8');
+      console.log('extractTextFromFile: Successfully read TXT text, length:', extractedText.length);
+      return extractedText;
     }
 
     throw new Error(`Unsupported file type: ${fileType}`);
@@ -55,6 +48,7 @@ export async function extractTextFromFile(buffer: Buffer, fileType: string): Pro
  * Normalizes text for AI context.
  */
 export function normalizeContext(text: string): string {
+  if (!text) return "";
   return text
     .replace(/\s+/g, ' ')
     .replace(/\n+/g, ' ')

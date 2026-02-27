@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"
 import { BookOpen } from "lucide-react"
 import { LogTable } from "@/components/admin/log-table"
+import { VectorStatusBadge, VectorStatus } from "@/components/ui/vector-status-badge"
 
 export default async function PlaybookPage() {
   const supabase = createClient()
@@ -62,7 +63,7 @@ export default async function PlaybookPage() {
             <CardHeader>
               <CardTitle>Upload History</CardTitle>
               <CardDescription>
-                Recent changes to the firm's Legal Playbook.
+                Recent changes to the firm&apos;s Legal Playbook.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -94,6 +95,10 @@ export default async function PlaybookPage() {
                 <span className="text-muted-foreground">Current File</span>
                 <span className="font-medium">{latestPlaybook?.file_name || "None"}</span>
               </div>
+              <div className="flex justify-between border-b pb-2 items-center">
+                <span className="text-muted-foreground">Vector Status</span>
+                <VectorStatusBadge status={latestPlaybook?.vector_status as VectorStatus} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -101,3 +106,4 @@ export default async function PlaybookPage() {
     </div>
   )
 }
+
