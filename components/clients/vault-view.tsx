@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Download, Trash2, FileIcon, Clock } from "lucide-react"
-import { deleteDocumentAction } from "@/lib/clients/actions"
+import { deleteDocumentAction } from "@/lib/clients/document-actions"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { VectorStatusBadge, VectorStatus } from "@/components/ui/vector-status-badge"
