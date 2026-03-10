@@ -130,6 +130,24 @@ All database logic is version-controlled in the following locations:
    CREATE POLICY "Lawyers manage clause assessments" 
      ON clause_analyses FOR ALL 
      USING (risk_analysis_id IN (SELECT id FROM risk_analyses WHERE document_id IN (SELECT id FROM documents WHERE client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()))));
+
+-- Policies
+-- Allow lawyers and admins to update documents they have access to
+    CREATE POLICY "Lawyers can update their own documents" ON documents
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM clients
+            WHERE id = documents.client_id
+            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM clients
+            WHERE id = documents.client_id
+            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
+        )
+   );
    ```
 
 4. **Storage Setup**:
