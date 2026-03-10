@@ -62,3 +62,21 @@ END $$;
 CREATE INDEX IF NOT EXISTS risk_analyses_document_id_idx ON public.risk_analyses (document_id);
 CREATE INDEX IF NOT EXISTS clause_analyses_risk_analysis_id_idx ON public.clause_analyses (risk_analysis_id);
 CREATE INDEX IF NOT EXISTS golden_rules_is_active_idx ON public.golden_rules (is_active) WHERE is_active = true;
+
+-- Policies
+-- Allow lawyers and admins to update documents they have access to
+    CREATE POLICY "Lawyers can update their own documents" ON documents
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM clients
+            WHERE id = documents.client_id
+            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM clients
+            WHERE id = documents.client_id
+            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
+        )
+   );
