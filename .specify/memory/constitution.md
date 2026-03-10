@@ -1,18 +1,17 @@
 <!--
 Sync Impact Report:
-- Version change: 2.0.0 -> 3.0.0
+- Version change: 3.0.0 -> 4.0.0
 - List of modified principles:
-  - Added X. Single Embedding Model (mxbai-embed-large-v1)
-  - Added XI. Strict Namespace Isolation (client_id filtering)
-  - Added XII. Query Prefix Requirement ("Represent this sentence...")
-  - Added XIII. Lifecycle Synchronization (Embedding/Document parity)
-  - Added XIV. Auth-Gated Processing (Role verification)
-  - Added XV. Failure Atomicity (Batch rollback)
-  - Added XVI. Idempotency (processDocument re-run safety)
+  - Added XVII. Instant Document Scanning
+  - Added XVIII. Traffic Light Risk Assessment
+  - Added XIX. Golden Rule Precedence
+  - Added XX. Mandatory Clause Enforcement
+  - Added XXI. Side-by-Side Redlining & Immediate State Update
 - Added sections:
-  - Principles X through XVI covering RAG Infrastructure.
+  - Principles XVII through XXI covering AI Contract Review (Step 5).
 - Templates requiring updates:
   - .specify/templates/plan-template.md (✅ aligned)
+  - .specify/templates/spec-template.md (✅ aligned)
   - .specify/templates/tasks-template.md (✅ aligned)
 - Follow-up TODOs: None
 -->
@@ -72,6 +71,24 @@ If embedding generation fails for any chunk, the entire batch for that document 
 ### XVI. Idempotency
 The processDocument function must be idempotent. If called twice for the same document_id, it must delete existing embeddings first and regenerate — never produce duplicate vectors.
 
+### XVII. Instant Document Scanning
+A full-document scan MUST be performed immediately upon a Lawyer entering the Review Studio for a specific document. The system must not wait for manual triggers to begin initial analysis.
+
+### XVIII. Traffic Light Risk Assessment
+Every identified clause must be assigned a status using a Traffic Light System:
+- **Green**: Compliant with playbook/golden rules.
+- **Yellow**: Minor risk or deviation requiring attention.
+- **Red**: High risk, prohibited clause, or missing mandatory requirement.
+
+### XIX. Golden Rule Precedence
+"Golden Rules" (provided via Admin text input) take absolute precedence over the "Legal Playbook" (PDF/Docx) during AI reasoning. If a conflict exists between the two, the AI MUST follow the Golden Rule.
+
+### XX. Mandatory Clause Enforcement
+Missing mandatory clauses defined in the Legal Playbook or Golden Rules MUST be flagged as Red risks. The system must proactively identify what is absent, not just what is present.
+
+### XXI. Side-by-Side Redlining & Immediate State Update
+Suggested redlines MUST be presented side-by-side with the original text. The system MUST provide an 'Accept & Replace' option that, when triggered, updates the document state immediately in the database/editor.
+
 ## Governance
 
 This constitution governs the SAI-Legal project. All implementation must adhere to these principles. Any deviation must be documented as a "Violation" in the implementation plan.
@@ -81,4 +98,4 @@ Amendments to this constitution require a version bump. Semantic versioning is u
 - MINOR: New principle/section added or materially expanded guidance.
 - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
 
-**Version**: 3.0.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-02-26
+**Version**: 4.0.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-09

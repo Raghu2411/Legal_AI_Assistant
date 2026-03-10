@@ -1,5 +1,3 @@
-import mammoth from 'mammoth';
-
 /**
  * Extracts text from a file buffer (PDF or DOCX).
  */
@@ -22,6 +20,7 @@ export async function extractTextFromFile(buffer: Buffer, fileType: string): Pro
     
     if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileType.endsWith('.docx')) {
       // DOCX Parsing Logic using Mammoth
+      const mammoth = require('mammoth');
       const result = await mammoth.extractRawText({ buffer });
       const extractedText = result.value || "";
       console.log('extractTextFromFile: Successfully extracted DOCX text, length:', extractedText.length);

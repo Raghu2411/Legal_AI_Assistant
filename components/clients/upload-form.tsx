@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { uploadDocumentAction } from "@/lib/clients/actions"
+import { uploadDocumentAction } from "@/lib/clients/document-actions"
 import { Upload, AlertCircle, FileCheck } from "lucide-react"
 
 export function UploadForm({ clientId }: { clientId: string }) {

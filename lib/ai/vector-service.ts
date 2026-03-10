@@ -24,7 +24,7 @@ export async function processDocument(
       .eq('document_id', sourceId);
 
     // 3. Chunk text
-    const splitter = getTextSplitter();
+    const splitter = await getTextSplitter();
     const rawChunks = await splitter.splitText(text);
     
     // Filter out empty or invalid chunks to avoid 422 errors

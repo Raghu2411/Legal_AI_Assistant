@@ -8,6 +8,7 @@ A highly specialized legal assistant built with Next.js, Supabase, and Groq (Lla
 - **Step 2: Admin CRUD Console** ✅
 - **Step 3: Client & Case Management** ✅
 - **Step 4: RAG Infrastructure** ✅
+- **Step 5: AI Contract Review (Review Studio)** 🚀 (In Progress)
 
 ## 📂 Project Structure: SQL & Policies
 All database logic is version-controlled in the following locations:
@@ -21,7 +22,8 @@ All database logic is version-controlled in the following locations:
 - **Framework**: Next.js 14+ (App Router)
 - **Database & Auth**: Supabase (Postgres, Auth, Storage, RLS, pgvector)
 - **AI/LLM**: Groq SDK (Llama 3.3 70B) + Mixedbread AI (Embeddings)
-- **Libraries**: `langchain` (@langchain/textsplitters), `pdf-parse`, `mammoth` (DOCX)
+- **Editor**: TipTap (ProseMirror-based) for Side-by-Side Redlining
+- **Libraries**: `langchain` (@langchain/textsplitters), `pdf-parse`, `mammoth` (DOCX), `react-pdf`, `docx`
 
 ## Getting Started
 
@@ -45,155 +47,126 @@ All database logic is version-controlled in the following locations:
 
    > **Note**: For local development, these files are also available in `supabase/migrations/`.
 
-   ### Step 4 & Full Sync SQL (Tables & Logic)
-   ```sql
-   -- 1. Enable pgvector
-   CREATE EXTENSION IF NOT EXISTS vector;
+   ### Core Infrastructure (Steps 1-4)
+   *(See `supabase/migrations/` or previous version of README for combined Core SQL)*
 
-   -- 2. Core Tables
-   CREATE TABLE clients (
+   ### Step 5: AI Contract Review (Review Studio)
+   Run this SQL to enable the "Review Studio" features:
+
+   ```sql
+   -- 1. Enums for AI Analysis
+   CREATE TYPE risk_level AS ENUM ('green', 'yellow', 'red');
+   CREATE TYPE scan_status AS ENUM ('pending', 'completed', 'failed');
+
+   -- 2. Golden Rules (Admin Control)
+   CREATE TABLE golden_rules (
      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     auto_case_id text UNIQUE,
-     name text NOT NULL,
-     case_type text NOT NULL,
-     lawyer_id uuid REFERENCES profiles(id) NOT NULL,
-     status text DEFAULT 'Active',
+     admin_id uuid REFERENCES profiles(id) NOT NULL,
+     rule_text text NOT NULL,
+     priority integer DEFAULT 0,
+     is_active boolean DEFAULT true,
      created_at timestamptz DEFAULT now()
    );
 
-   CREATE TABLE documents (
+   -- 3. Risk Analyses (Document-level scans)
+   CREATE TABLE risk_analyses (
      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     client_id uuid REFERENCES clients(id) ON DELETE CASCADE NOT NULL,
-     file_url text NOT NULL,
-     file_name text NOT NULL,
-     doc_type text NOT NULL,
-     uploaded_by uuid REFERENCES profiles(id) NOT NULL,
-     uploaded_at timestamptz DEFAULT now(),
-     vector_status text DEFAULT 'Pending',
-     last_vectorized timestamptz
-   );
-
-   CREATE TABLE playbooks (
-     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     file_path text,
-     file_name text,
-     golden_rules text,
+     document_id uuid REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
+     timestamp timestamptz DEFAULT now(),
      version integer DEFAULT 1,
-     created_by uuid REFERENCES profiles(id),
-     created_at timestamptz DEFAULT now(),
-     vector_status text DEFAULT 'Pending',
-     last_vectorized timestamptz
+     status scan_status DEFAULT 'pending',
+     raw_json jsonb DEFAULT '{}'::jsonb
    );
 
-   CREATE TABLE embeddings (
+   -- 4. Clause Analyses (Individual findings)
+   CREATE TABLE clause_analyses (
      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     document_id uuid NOT NULL, -- Reference to documents.id or playbooks.id
-     client_id uuid REFERENCES clients(id), -- NULL for global firm-wide data
-     content text NOT NULL,
-     metadata jsonb DEFAULT '{}'::jsonb,
-     embedding vector(1024) NOT NULL,
+     risk_analysis_id uuid REFERENCES risk_analyses(id) ON DELETE CASCADE NOT NULL,
+     original_text text NOT NULL,
+     risk_status risk_level NOT NULL,
+     rationale text,
+     suggested_rewrite text,
+     user_overridden_status risk_level,
+     user_override_rationale text,
+     is_gap boolean DEFAULT false,
      created_at timestamptz DEFAULT now()
    );
 
-   -- 3. Indexes & Semantic Search Logic
-   CREATE INDEX ON embeddings USING hnsw (embedding vector_cosine_ops);
-   CREATE INDEX ON embeddings (document_id);
-   CREATE INDEX ON embeddings (client_id);
-
-   CREATE OR REPLACE FUNCTION retrieve_context(
-     query_embedding vector(1024),
-     match_threshold float,
-     match_count int,
-     target_client_id uuid DEFAULT NULL
-   )
-   RETURNS TABLE (
-     content text,
-     metadata jsonb,
-     similarity float
-   )
-   LANGUAGE plpgsql
-   AS $$
-   BEGIN
-     RETURN QUERY
-     SELECT
-       e.content,
-       e.metadata,
-       1 - (e.embedding <=> query_embedding) AS similarity
-     FROM embeddings e
-     WHERE (e.client_id = target_client_id OR e.client_id IS NULL)
-       AND 1 - (e.embedding <=> query_embedding) > match_threshold
-     ORDER BY similarity DESC
-     LIMIT match_count;
-   END;
-   $$;
-
-   -- 4. Case ID Generator Trigger
-   CREATE OR REPLACE FUNCTION generate_client_case_id()
+   -- 5. Trigger: Auto-increment Scan Version per Document
+   CREATE OR REPLACE FUNCTION increment_scan_version()
    RETURNS TRIGGER AS $$
-   DECLARE
-       lawyer_name TEXT;
-       name_slug TEXT;
-       random_suffix TEXT;
-       final_id TEXT;
-       done BOOLEAN := FALSE;
    BEGIN
-       SELECT full_name INTO lawyer_name FROM profiles WHERE id = NEW.lawyer_id;
-       name_slug := lower(split_part(lawyer_name, ' ', 1));
-       name_slug := regexp_replace(name_slug, '[^a-z0-9]', '', 'g');
-       WHILE NOT done LOOP
-           random_suffix := upper(substring(replace(gen_random_uuid()::text, '-', ''), 1, 4));
-           final_id := name_slug || '-' || random_suffix;
-           IF NOT EXISTS (SELECT 1 FROM clients WHERE auto_case_id = final_id) THEN
-               done := TRUE;
-           END IF;
-       END LOOP;
-       NEW.auto_case_id := final_id;
-       RETURN NEW;
+     SELECT COALESCE(MAX(version), 0) + 1 
+     INTO NEW.version 
+     FROM risk_analyses 
+     WHERE document_id = NEW.document_id;
+     RETURN NEW;
    END;
-   $$ LANGUAGE plpgsql SECURITY DEFINER;
+   $$ LANGUAGE plpgsql;
 
-   CREATE TRIGGER trigger_generate_case_id
-   BEFORE INSERT ON clients
+   CREATE TRIGGER trigger_increment_scan_version
+   BEFORE INSERT ON risk_analyses
    FOR EACH ROW
-   EXECUTE FUNCTION generate_client_case_id();
-   ```
+   EXECUTE FUNCTION increment_scan_version();
 
-   ### Row Level Security (RLS) Policies
-   ```sql
-   -- Clients
-   ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY "Lawyers view own or admin view all" ON clients FOR SELECT USING (auth.uid() = lawyer_id OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
-   CREATE POLICY "Lawyers insert own" ON clients FOR INSERT WITH CHECK (auth.uid() = lawyer_id OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   -- 6. Row Level Security (RLS)
+   ALTER TABLE golden_rules ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Anyone authenticated can view active golden rules" 
+     ON golden_rules FOR SELECT 
+     USING (is_active = true OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Admins can manage golden rules" 
+     ON golden_rules FOR ALL 
+     USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
 
-   -- Embeddings
-   ALTER TABLE embeddings ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY "Users read assigned or global" ON public.embeddings FOR SELECT TO authenticated
-   USING (client_id IS NULL OR client_id IN (SELECT id FROM public.clients WHERE lawyer_id = auth.uid()) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   ALTER TABLE risk_analyses ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Lawyers view own document scans" 
+     ON risk_analyses FOR SELECT 
+     USING (document_id IN (SELECT id FROM documents WHERE client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid())) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Lawyers create scans for own docs" 
+     ON risk_analyses FOR INSERT 
+     WITH CHECK (document_id IN (SELECT id FROM documents WHERE client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid())) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+   ALTER TABLE clause_analyses ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Lawyers manage clause assessments" 
+     ON clause_analyses FOR ALL 
+     USING (risk_analysis_id IN (SELECT id FROM risk_analyses WHERE document_id IN (SELECT id FROM documents WHERE client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()))));
+
+-- Policies
+-- Allow lawyers and admins to update documents they have access to
+    CREATE POLICY "Lawyers can update their own documents" ON documents
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM clients
+            WHERE id = documents.client_id
+            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM clients
+            WHERE id = documents.client_id
+            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
+        )
+   );
    ```
 
 4. **Storage Setup**:
-   - Create private buckets: `playbooks` and `client-vaults`.
-   - **Storage RLS**:
-     ```sql
-     CREATE POLICY "Vault access" ON storage.objects FOR SELECT TO authenticated USING (
-       bucket_id = 'client-vaults' AND (
-         (storage.foldername(name))[1] IN (SELECT id::text FROM clients WHERE lawyer_id = auth.uid()) 
-         OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'
-       )
-     );
-     ```
+   - Ensure the `client-vaults` bucket is configured for private access.
+   - Files are stored as: `client-vaults/[client_id]/[document_id]/[filename]`.
 
-5. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
+5. **Step-by-Step Step 5 Setup**:
+   1. **Admin Configuration**: Log in as an Admin and navigate to the **Playbook Console**. Add your firm's "Golden Rules" (e.g., "All contracts MUST have a 30-day termination for convenience clause").
+   2. **Document Readiness**: Ensure a document has been uploaded for a client and its vectorization status is 'Completed' (Step 4 prerequisite).
+   3. **Enter Review Studio**: As a Lawyer, open the **Client Detail** page, find the document, and click the **Review Studio** icon.
+   4. **Automated Scan**: The system will automatically trigger a Groq-powered scan using Llama 3.3.
+   5. **Interactive Review**: Use the middle pane to view risks, click a risk to see the side-by-side redline, and click **Accept & Replace** to update the TipTap editor state.
 
 ## Roles & Access
-- **Admin**: Full access to oversight routes (Users, Logs, Playbook, Clients) and semantic oversight.
-- **Lawyer**: Access to their specific dashboard, client management, and AI retrieval.
-- **Security**: Strict client-data isolation enforced at the vector level via dual-namespace filtering.
+- **Admin**: Full access to oversight routes (Users, Logs, Playbook, Clients) and semantic oversight. Manages global "Golden Rules."
+- **Lawyer**: Access to their specific dashboard, client management, and AI retrieval. Performs interactive document reviews in the Review Studio.
+- **Security**: Strict client-data isolation enforced at the database (RLS) and vector level.
 
 ## To-Do / Roadmap
-- [ ] **Step 5: Real-time AI Chat**: Full UI for interacting with the context-aware Llama 3.3 model.
-- [ ] **Step 6: Automated Compliance**: Automated checks of client documents against the firm playbook.
-- [ ] **Step 7: Notifications**: Email alerts for critical audit events.
+- [x] **Step 5: AI Contract Review**: Review Studio with side-by-side redlining and traffic-light risk assessment.
+- [ ] **Step 6: Automated Compliance**: Firm-wide dashboard for tracking compliance rates across all documents.
+- [ ] **Step 7: Notifications**: Email alerts for critical audit events and risk detections.

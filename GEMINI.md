@@ -9,6 +9,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-25
 - PostgreSQL (`clients`, `documents`), Supabase Storage (`client-vaults`) (003-client-management)
 - TypeScript / Next.js 14+ (App Router) + `mixedbread-ai` SDK, `langchain` (RecursiveCharacterTextSplitter), `pdf-parse`, `mammoth` (for DOCX) (004-rag-infrastructure)
 - Supabase PostgreSQL (pgvector), Supabase Storage (004-rag-infrastructure)
+- TypeScript / Next.js 14+ (App Router) + Groq SDK, TipTap (Editor), shadcn/ui (Three-pane layout), Lucide React (Icons), Supabase (Storage/DB) (005-ai-contract-review)
+- Supabase PostgreSQL (`risk_analyses`, `clause_analyses`, `golden_rules`), Supabase Storage (PDF/DOCX) (005-ai-contract-review)
 
 - TypeScript / Next.js 14+ (App Router) + @supabase/auth-helpers-nextjs, @supabase/supabase-js, tailwindcss, lucide-react, shadcn/ui, react-hook-form, zod (001-auth-rbac-setup)
 
@@ -29,9 +31,9 @@ npm test; npm run lint
 TypeScript / Next.js 14+ (App Router): Follow standard conventions
 
 ## Recent Changes
+- 005-ai-contract-review: Added TypeScript / Next.js 14+ (App Router) + Groq SDK, TipTap (Editor), shadcn/ui (Three-pane layout), Lucide React (Icons), Supabase (Storage/DB)
 - 004-rag-infrastructure: Added TypeScript / Next.js 14+ (App Router) + `mixedbread-ai` SDK, `langchain` (RecursiveCharacterTextSplitter), `pdf-parse`, `mammoth` (for DOCX)
 - 003-client-management: Added TypeScript / Next.js 14+ (App Router) + Supabase (Auth, DB, Storage), shadcn/ui, react-hook-form, zod
-- 003-client-management: Added [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION] + [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
 
 
 <!-- MANUAL ADDITIONS START -->
