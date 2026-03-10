@@ -60,8 +60,8 @@ export default async function AdminClientVaultPage({
   }
 
   return (
-    <div className="p-8 flex flex-col gap-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between gap-4">
+    <div className="p-4 md:p-8 flex flex-col gap-8 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/admin/clients/${params.id}`}>
@@ -71,12 +71,14 @@ export default async function AdminClientVaultPage({
           <div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-6 w-6 text-primary" />
-              <h1 className="text-3xl font-bold tracking-tight">Admin Oversight: Document Vault</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Oversight: Document Vault</h1>
             </div>
             <p className="text-muted-foreground">Oversight for Client: {client.name} ({client.auto_case_id})</p>
           </div>
         </div>
-        <VaultSearch />
+        <div className="w-full md:w-auto">
+          <VaultSearch />
+        </div>
       </div>
 
       {query && (
@@ -107,7 +109,7 @@ export default async function AdminClientVaultPage({
         </Card>
       )}
 
-      <div className="grid gap-8 md:grid-cols-[350px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
         <div className="space-y-8">
           <Card>
             <CardHeader>
@@ -125,16 +127,16 @@ export default async function AdminClientVaultPage({
           </Card>
         </div>
 
-        <div className="space-y-8">
-          <Card>
+        <div className="space-y-8 min-w-0">
+          <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle>Vault Inventory</CardTitle>
               <CardDescription>
                 All documents associated with this case file.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <VaultView clientId={params.id} documents={documents} />
+            <CardContent className="p-0 sm:p-6">
+              <VaultView clientId={params.id} documents={documents} showReview={false} />
             </CardContent>
           </Card>
         </div>

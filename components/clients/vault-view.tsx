@@ -10,11 +10,13 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Download, Trash2, FileIcon, Clock } from "lucide-react"
+import { Download, Trash2, FileIcon, Clock, Eye, RefreshCw, Loader2 } from "lucide-react"
 import { deleteDocumentAction } from "@/lib/clients/document-actions"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { VectorStatusBadge, VectorStatus } from "@/components/ui/vector-status-badge"
+import Link from "next/link"
+import { revectorizeDocument } from "@/lib/review/actions"
 
 interface Document {
   id: string
@@ -27,13 +29,16 @@ interface Document {
 
 export function VaultView({ 
   clientId, 
-  documents: initialDocuments 
+  documents: initialDocuments,
+  showReview = true
 }: { 
   clientId: string
-  documents: Document[] 
+  documents: Document[]
+  showReview?: boolean
 }) {
   const [documents, setDocuments] = useState(initialDocuments)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [revectorizingId, setRevectorizingId] = useState<string | null>(null)
   const supabase = createClient()
 
   const handleDelete = async (docId: string, fileUrl: string) => {
@@ -70,12 +75,30 @@ export function VaultView({
     document.body.removeChild(a)
   }
 
+  const handleRevectorize = async (docId: string) => {
+    if (!confirm("This will replace current search chunks with your refined version from Review Studio. Proceed?")) return
+    
+    setRevectorizingId(docId)
+    try {
+      const result = await revectorizeDocument(docId)
+      if (result.success) {
+        alert("Re-vectorization started. Status will update shortly.")
+      } else {
+        alert(result.error)
+      }
+    } catch (err) {
+      alert("An error occurred during re-vectorization.")
+    } finally {
+      setRevectorizingId(null)
+    }
+  }
+
   return (
-    <div className="rounded-md border">
+    <div className="w-full overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>File Name</TableHead>
+            <TableHead className="min-w-[200px]">File Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Uploaded</TableHead>
             <TableHead>Status</TableHead>
@@ -87,14 +110,16 @@ export function VaultView({
             <TableRow key={doc.id}>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
-                  <FileIcon className="h-4 w-4 text-muted-foreground" />
-                  {doc.file_name}
+                  <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate max-w-[150px] md:max-w-none" title={doc.file_name}>
+                    {doc.file_name}
+                  </span>
                 </div>
               </TableCell>
               <TableCell>
                 <Badge variant="outline">{doc.doc_type}</Badge>
               </TableCell>
-              <TableCell className="text-muted-foreground text-sm">
+              <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {new Date(doc.uploaded_at).toLocaleDateString()}
@@ -104,10 +129,38 @@ export function VaultView({
                 <VectorStatusBadge status={doc.vector_status as VectorStatus} />
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-1 md:gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="gap-1 md:gap-2 h-8"
+                    onClick={() => handleRevectorize(doc.id)}
+                    disabled={revectorizingId === doc.id}
+                  >
+                    {revectorizingId === doc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">Re-vectorize</span>
+                  </Button>
+                  {showReview && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="gap-1 md:gap-2 h-8"
+                      asChild
+                    >
+                      <Link href={`/review/${doc.id}`}>
+                        <Eye className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Review</span>
+                      </Link>
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="icon"
+                    className="h-8 w-8"
                     onClick={() => handleDownload(doc.file_url, doc.file_name)}
                   >
                     <Download className="h-4 w-4" />
@@ -115,7 +168,7 @@ export function VaultView({
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                     disabled={deletingId === doc.id}
                     onClick={() => handleDelete(doc.id, doc.file_url)}
                   >
@@ -135,5 +188,5 @@ export function VaultView({
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
