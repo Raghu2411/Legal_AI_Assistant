@@ -1,14 +1,13 @@
 <!--
 Sync Impact Report:
-- Version change: 4.1.0 -> 4.2.0
+- Version change: 4.3.0 → 4.4.0
 - List of modified principles:
-  - Added XXVI. Mandatory Client Context
-  - Added XXVII. Interactive Interview Drafting
-  - Added XXVIII. Manual Override Sovereignty
-  - Added XXIX. Automatic RAG Indexing
-  - Added XXX. Explicit Email Generation
+  - Ratified XXXI. Golden Rule Triage
+  - Ratified XXXII. Obligation Verification
+  - Ratified XXXIII. Dual-Layer Compliance
+  - Ratified XXXIV. Operational Auditability
 - Added sections:
-  - Principles XXVI through XXX covering Smart Drafting Studio (Step 7).
+  - Formal ratification of Step 8: Smart Triage & Operations principles.
 - Templates requiring updates:
   - .specify/templates/plan-template.md (✅ updated)
   - .specify/templates/spec-template.md (✅ updated)
@@ -116,6 +115,18 @@ Saving a finalized document MUST automatically trigger its indexing into the RAG
 ### XXX. Explicit Email Generation
 Cover emails MUST only be generated upon an explicit 'Draft Email' action by the user. Automatic or background generation of emails is prohibited to ensure lawyers review all outbound communication.
 
+### XXXI. Golden Rule Triage
+NDA Triage must use Admin-defined 'Golden Rules' to separate Standard from Complex files. High-stakes or non-standard agreements are flagged for manual review, while routine ones are automated.
+
+### XXXII. Obligation Verification
+All extracted obligations (dates, tasks, requirements) require a 'Review & Confirm' step by a Lawyer before they are permitted to be entered into the operational calendar. The AI proposes, the Lawyer disposes.
+
+### XXXIII. Dual-Layer Compliance
+Compliance checks must cover both internal Admin-defined policies and general regulatory/industry standards. The system must verify alignment with both layers during triage and review.
+
+### XXXIV. Operational Auditability
+The system must maintain an immutable operational audit trail of triage decisions, confirmations, and compliance checks, visible to Admins for firm-wide quality assurance.
+
 ## Governance
 
 This constitution governs the SAI-Legal project. All implementation must adhere to these principles. Any deviation must be documented as a "Violation" in the implementation plan.
@@ -125,4 +136,5 @@ Amendments to this constitution require a version bump. Semantic versioning is u
 - MINOR: New principle/section added or materially expanded guidance.
 - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
 
-**Version**: 4.2.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-22
+**Version**: 4.4.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-22
+

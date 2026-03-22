@@ -61,6 +61,13 @@ export default function LawyerLayout({
               Client Portfolio
             </span>
           </Link>
+
+          <Link href="/dashboard/operations">
+            <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
+              <LayoutDashboard className="h-4 w-4" />
+              Operations Dashboard
+            </span>
+          </Link>
         </nav>
 
         <div className="border-t pt-4">
