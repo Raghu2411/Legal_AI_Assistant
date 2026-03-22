@@ -8,7 +8,8 @@ A highly specialized legal assistant built with Next.js, Supabase, and Groq (Lla
 - **Step 2: Admin CRUD Console** ✅
 - **Step 3: Client & Case Management** ✅
 - **Step 4: RAG Infrastructure** ✅
-- **Step 5: AI Contract Review (Review Studio)** 🚀 (In Progress)
+- **Step 5: AI Contract Review (Review Studio)** ✅
+- **Step 6: Intelligence Hub** 🚀 (In Progress)
 
 ## 📂 Project Structure: SQL & Policies
 All database logic is version-controlled in the following locations:
@@ -21,8 +22,9 @@ All database logic is version-controlled in the following locations:
 ## Tech Stack
 - **Framework**: Next.js 14+ (App Router)
 - **Database & Auth**: Supabase (Postgres, Auth, Storage, RLS, pgvector)
-- **AI/LLM**: Groq SDK (Llama 3.3 70B) + Mixedbread AI (Embeddings)
+- **AI/LLM**: Groq SDK (Llama 3.3 70B) + Mixedbread AI (Embeddings) + Vercel AI SDK (`ai`)
 - **Editor**: TipTap (ProseMirror-based) for Side-by-Side Redlining
+- **UI Components**: shadcn/ui (Tabs, ScrollArea, Dialog, etc.)
 - **Libraries**: `langchain` (@langchain/textsplitters), `pdf-parse`, `mammoth` (DOCX), `react-pdf`, `docx`
 
 ## Getting Started
@@ -150,16 +152,63 @@ All database logic is version-controlled in the following locations:
    );
    ```
 
+   ### Step 6: Intelligence Hub
+   Run this SQL to enable the "Intelligence Hub" features:
+
+   ```sql
+   -- 1. Metadata Extension: Vendor Document Identification
+   ALTER TABLE public.documents ADD COLUMN is_vendor boolean DEFAULT false;
+
+   -- 2. Enhanced Retrieval: pgvector with Metadata Filtering
+   -- This replaces or complements retrieve_context to support Vendor Mode
+   CREATE OR REPLACE FUNCTION public.retrieve_context_with_vendor(
+     query_embedding vector(1024),
+     match_threshold float,
+     match_count int,
+     target_client_id uuid,
+     vendor_only boolean DEFAULT false
+   )
+   RETURNS TABLE (
+     content text,
+     metadata jsonb,
+     similarity float
+   )
+   LANGUAGE plpgsql
+   AS $$
+   BEGIN
+     RETURN QUERY
+     SELECT
+       e.content,
+       e.metadata,
+       1 - (e.embedding <=> query_embedding) AS similarity
+     FROM public.embeddings e
+     JOIN public.documents d ON e.document_id = d.id
+     WHERE (e.client_id = target_client_id OR e.client_id IS NULL)
+       AND (NOT vendor_only OR d.is_vendor = true)
+       AND 1 - (e.embedding <=> query_embedding) > match_threshold
+     ORDER BY e.embedding <=> query_embedding
+     LIMIT match_count;
+   END;
+   $$;
+   ```
+
 4. **Storage Setup**:
    - Ensure the `client-vaults` bucket is configured for private access.
    - Files are stored as: `client-vaults/[client_id]/[document_id]/[filename]`.
 
-5. **Step-by-Step Step 5 Setup**:
+5. **Step-by-Step Step 5 Setup (Review Studio)**:
    1. **Admin Configuration**: Log in as an Admin and navigate to the **Playbook Console**. Add your firm's "Golden Rules" (e.g., "All contracts MUST have a 30-day termination for convenience clause").
    2. **Document Readiness**: Ensure a document has been uploaded for a client and its vectorization status is 'Completed' (Step 4 prerequisite).
    3. **Enter Review Studio**: As a Lawyer, open the **Client Detail** page, find the document, and click the **Review Studio** icon.
    4. **Automated Scan**: The system will automatically trigger a Groq-powered scan using Llama 3.3.
    5. **Interactive Review**: Use the middle pane to view risks, click a risk to see the side-by-side redline, and click **Accept & Replace** to update the TipTap editor state.
+
+6. **Step-by-Step Step 6 Setup (Intelligence Hub)**:
+   1. **Vendor Tagging**: During document upload, use the new manual toggle to mark documents as "Vendor Related" if applicable.
+   2. **Access Hub**: Navigate to the **Client Detail** page and select the **Intelligence Hub** tab.
+   3. **Chat**: Use the Chat panel for natural language queries. All responses will include clickable footnotes linking back to the source text.
+   4. **Briefings**: Switch to the **Briefing** tab to see a dynamic summary tailored to the document's type (Contract, Evidence, etc.).
+   5. **Vendor Mode**: Toggle **Vendor Mode** to ON to restrict all AI analysis and retrieval to vendor-specific documents only.
 
 ## Roles & Access
 - **Admin**: Full access to oversight routes (Users, Logs, Playbook, Clients) and semantic oversight. Manages global "Golden Rules."
@@ -168,5 +217,6 @@ All database logic is version-controlled in the following locations:
 
 ## To-Do / Roadmap
 - [x] **Step 5: AI Contract Review**: Review Studio with side-by-side redlining and traffic-light risk assessment.
-- [ ] **Step 6: Automated Compliance**: Firm-wide dashboard for tracking compliance rates across all documents.
-- [ ] **Step 7: Notifications**: Email alerts for critical audit events and risk detections.
+- [ ] **Step 6: Intelligence Hub**: Conversational Chat with session memory, Dynamic Briefings, and Vendor Mode filtering.
+- [ ] **Step 7: Automated Compliance**: Firm-wide dashboard for tracking compliance rates across all documents.
+- [ ] **Step 8: Notifications**: Email alerts for critical audit events and risk detections.
