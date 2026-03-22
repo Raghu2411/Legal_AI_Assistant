@@ -1,5 +1,6 @@
 import { Groq } from "groq-sdk";
 import { createClient } from "@/lib/supabase/server";
+import { extractTextFromFile } from "@/lib/playbook/parser";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -13,16 +14,31 @@ export async function getFirmContext() {
 
   const { data: latest } = await supabase
     .from("playbooks")
-    .select("golden_rules, file_name")
+    .select("golden_rules, file_name, file_path")
     .order("version", { ascending: false })
     .limit(1)
     .single();
 
+  let handbookText = "";
+  if (latest?.file_path) {
+    try {
+      const { data: fileData, error } = await supabase.storage
+        .from("playbooks")
+        .download(latest.file_path);
+      
+      if (fileData) {
+        const buffer = Buffer.from(await fileData.arrayBuffer());
+        handbookText = await extractTextFromFile(buffer, latest.file_name);
+      }
+    } catch (err) {
+      console.error("Failed to fetch handbook text:", err);
+    }
+  }
+
   return {
     goldenRules: latest?.golden_rules || "No Golden Rules defined.",
     playbookName: latest?.file_name || "No Playbook uploaded.",
-    // Note: In Step 2, we assume the extracted text is in golden_rules or handled similarly
-    // For a real app, you might store the extracted PDF text in a separate field
+    handbookText: handbookText || "Full handbook text unavailable.",
   };
 }
 

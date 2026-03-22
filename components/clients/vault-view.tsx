@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Download, Trash2, FileIcon, Clock, Eye, RefreshCw, Loader2 } from "lucide-react"
+import { Download, Trash2, FileIcon, Clock, Eye, RefreshCw, Loader2, Sparkles } from "lucide-react"
 import { deleteDocumentAction } from "@/lib/clients/document-actions"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
@@ -39,7 +39,30 @@ export function VaultView({
   const [documents, setDocuments] = useState(initialDocuments)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [revectorizingId, setRevectorizingId] = useState<string | null>(null)
+  const [triagingId, setTriagingId] = useState<string | null>(null)
   const supabase = createClient()
+
+  const handleTriage = async (docId: string) => {
+    setTriagingId(docId)
+    try {
+      const response = await fetch("/api/triage/process", {
+        method: "POST",
+        body: JSON.stringify({ documentId: docId }),
+        headers: { "Content-Type": "application/json" }
+      })
+      const result = await response.json()
+      if (result.success) {
+        alert("Triage and extraction complete!")
+        window.location.reload()
+      } else {
+        alert(`Triage failed: ${result.error}`)
+      }
+    } catch (err) {
+      alert("An error occurred during triage.")
+    } finally {
+      setTriagingId(null)
+    }
+  }
 
   const handleDelete = async (docId: string, fileUrl: string) => {
     if (!confirm("Are you sure you want to delete this document?")) return
@@ -130,6 +153,20 @@ export function VaultView({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1 md:gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="gap-1 md:gap-2 h-8 border-primary/50 text-primary hover:bg-primary/5"
+                    onClick={() => handleTriage(doc.id)}
+                    disabled={triagingId === doc.id}
+                  >
+                    {triagingId === doc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">Triage Scan</span>
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"

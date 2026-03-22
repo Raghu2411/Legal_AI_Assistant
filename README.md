@@ -11,6 +11,7 @@ A highly specialized legal assistant built with Next.js, Supabase, and Groq (Lla
 - **Step 5: AI Contract Review (Review Studio)** ✅
 - **Step 6: Intelligence Hub** ✅
 - **Step 7: Smart Drafting Studio** ✅
+- **Step 8: Smart Triage & Operations** ✅
 
 ## 📂 Project Structure: SQL & Policies
 All database logic is version-controlled in the following locations:
@@ -25,8 +26,8 @@ All database logic is version-controlled in the following locations:
 - **Database & Auth**: Supabase (Postgres, Auth, Storage, RLS, pgvector)
 - **AI/LLM**: Groq SDK (Llama 3.3 70B) + Mixedbread AI (Embeddings) + Vercel AI SDK (`ai`)
 - **Editor**: TipTap (ProseMirror-based) for Side-by-Side Redlining & Smart Drafting
-- **UI Components**: shadcn/ui (Tabs, ScrollArea, Dialog, etc.)
-- **Libraries**: `langchain` (@langchain/textsplitters), `pdf-parse`, `mammoth` (DOCX), `react-pdf`, `docx`
+- **UI Components**: shadcn/ui (Tabs, ScrollArea, Dialog, Calendar, etc.)
+- **Libraries**: `langchain` (@langchain/textsplitters), `pdf-parse`, `mammoth` (DOCX), `react-pdf`, `docx`, `date-fns`
 
 ## Getting Started
 
@@ -207,6 +208,42 @@ All database logic is version-controlled in the following locations:
      WITH CHECK (user_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
    ```
 
+   ### Step 8: Smart Triage & Operations
+   Run this SQL to enable the "Smart Triage & Operations" features:
+
+   ```sql
+   -- 1. Obligations Table: Tracking AI-extracted milestones
+   CREATE TABLE obligations (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     document_id uuid REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
+     client_id uuid REFERENCES clients(id) ON DELETE CASCADE NOT NULL,
+     description text NOT NULL,
+     due_date timestamptz, -- AI extracted or TBD
+     status text DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected')),
+     complexity_score int, -- 1-10 assigned by AI
+     classification text DEFAULT 'standard' CHECK (classification IN ('standard', 'complex')),
+     metadata jsonb DEFAULT '{}'::jsonb, -- Stores dual-scope compliance details
+     created_by uuid REFERENCES auth.users(id), -- Lawyer who confirmed
+     confirmed_at timestamptz,
+     created_at timestamptz DEFAULT now()
+   );
+
+   -- 2. Row Level Security (RLS)
+   ALTER TABLE obligations ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Lawyers view own obligations" 
+     ON obligations FOR SELECT 
+     USING (client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Lawyers/AI create obligations" 
+     ON obligations FOR INSERT 
+     WITH CHECK (client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Lawyers update obligations status" 
+     ON obligations FOR UPDATE 
+     USING (client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Lawyers delete obligations" 
+     ON obligations FOR DELETE 
+     USING (client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   ```
+
 4. **Storage Setup**:
    - Ensure the `client-vaults` bucket is configured for private access.
    - Ensure the `client-documents` bucket is configured for private access (Drafting output).
@@ -235,13 +272,23 @@ All database logic is version-controlled in the following locations:
    6. **Finalize**: Click **Finalize & Save** to generate the final file, upload it to the `client-documents` bucket, and automatically trigger RAG indexing.
    7. **Email Delivery**: Once saved, use the **Draft Email** utility to generate a professional cover letter based on the drafted content.
 
+8. **Step-by-Step Step 8 Setup (Smart Triage & Operations)**:
+   1. **Triage Logic**: Navigate to the **Operations Dashboard**. New uploads are automatically classified as 'Standard' or 'Complex' based on Admin Golden Rules.
+   2. **Client Filtering**: Use the **Filter by Client** dropdown to instantly refine the Triage Queue, Verification List, and Operations Calendar for a specific client.
+   3. **Manual Override**: Use the **Triage Queue** to manually override AI classifications with a mandatory justification for audit integrity.
+   4. **Extraction**: Click **Process** on a triage item to extract obligations. Items appear in the **Verification List** as 'Pending'.
+   5. **Dual-Scope Review**: Review obligations for both Policy and Regulatory alignment (flagged by AI).
+   6. **Confirm to Calendar**: Click **Confirm** on a verified obligation. It will automatically transition from the list to the **Operations Calendar**.
+   7. **Enhanced Calendar View**: View confirmed milestones on the visual calendar. Click any event to see a detailed popover containing the **Client Name**, **Case ID**, and **Document Name**.
+   8. **Audit Trail**: View detailed logs of all triage decisions and confirmations in the **Activity Log** (Step 7 extension).
+
 ## Roles & Access
 - **Admin**: Full access to oversight routes (Users, Logs, Playbook, Clients) and semantic oversight. Manages global "Golden Rules."
-- **Lawyer**: Access to their specific dashboard, client management, and AI retrieval. Performs interactive document reviews in the Review Studio and drafts new documents in the Smart Drafting Studio.
+- **Lawyer**: Access to their specific dashboard, client management, and AI retrieval. Performs document reviews, drafting sessions, and operational triage/confirmation.
 - **Security**: Strict client-data isolation enforced at the database (RLS) and vector level.
 
 ## To-Do / Roadmap
 - [x] **Step 5: AI Contract Review**: Review Studio with side-by-side redlining and traffic-light risk assessment.
 - [x] **Step 6: Intelligence Hub**: Conversational Chat with session memory, Dynamic Briefings, and Vendor Mode filtering.
 - [x] **Step 7: Smart Drafting Studio**: Interactive AI-Interview Drafting with TipTap sync and precedent grounding.
-- [ ] **Step 8: Notifications**: Email alerts for critical audit events and risk detections.
+- [x] **Step 8: Smart Triage & Operations**: AI-driven triage, obligation verification, and visual operational calendar.
