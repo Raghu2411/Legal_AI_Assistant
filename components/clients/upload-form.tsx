@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { uploadDocumentAction } from "@/lib/clients/document-actions"
-import { Upload, AlertCircle, FileCheck } from "lucide-react"
+import { Upload, AlertCircle, FileCheck, ShieldCheck } from "lucide-react"
 
 export function UploadForm({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(false)
@@ -60,6 +60,19 @@ export function UploadForm({ clientId }: { clientId: string }) {
           <option value="Correspondence">Correspondence</option>
           <option value="Pleading">Pleading</option>
         </select>
+      </div>
+
+      <div className="flex items-center space-x-2 p-2 rounded-md border bg-muted/20">
+        <input
+          type="checkbox"
+          id="isVendor"
+          name="isVendor"
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+        />
+        <Label htmlFor="isVendor" className="flex items-center gap-1.5 cursor-pointer">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          Mark as Vendor Document
+        </Label>
       </div>
 
       {error && (

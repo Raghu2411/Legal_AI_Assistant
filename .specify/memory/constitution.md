@@ -1,18 +1,17 @@
 <!--
 Sync Impact Report:
-- Version change: 3.0.0 -> 4.0.0
+- Version change: 4.0.0 -> 4.1.0
 - List of modified principles:
-  - Added XVII. Instant Document Scanning
-  - Added XVIII. Traffic Light Risk Assessment
-  - Added XIX. Golden Rule Precedence
-  - Added XX. Mandatory Clause Enforcement
-  - Added XXI. Side-by-Side Redlining & Immediate State Update
+  - Added XXII. Strict Retrieval Constraint
+  - Added XXIII. Session Context Persistence
+  - Added XXIV. Source Attribution via Footnotes
+  - Added XXV. Dynamic Briefing Templates
 - Added sections:
-  - Principles XVII through XXI covering AI Contract Review (Step 5).
+  - Principles XXII through XXV covering Intelligence Hub (Step 6).
 - Templates requiring updates:
-  - .specify/templates/plan-template.md (✅ aligned)
-  - .specify/templates/spec-template.md (✅ aligned)
-  - .specify/templates/tasks-template.md (✅ aligned)
+  - .specify/templates/plan-template.md (✅ updated)
+  - .specify/templates/spec-template.md (✅ updated)
+  - .specify/templates/tasks-template.md (✅ updated)
 - Follow-up TODOs: None
 -->
 
@@ -89,6 +88,18 @@ Missing mandatory clauses defined in the Legal Playbook or Golden Rules MUST be 
 ### XXI. Side-by-Side Redlining & Immediate State Update
 Suggested redlines MUST be presented side-by-side with the original text. The system MUST provide an 'Accept & Replace' option that, when triggered, updates the document state immediately in the database/editor.
 
+### XXII. Strict Retrieval Constraint
+AI responses MUST be derived exclusively from the provided document context. If the answer is not in the source material, the AI MUST state its inability to answer rather than speculating or hallucinating.
+
+### XXIII. Session Context Persistence
+The system MUST maintain a complete history of the current chat session's Q&A. This context MUST be passed to the LLM for subsequent queries in the same session to ensure continuity and logical flow.
+
+### XXIV. Source Attribution via Footnotes
+Every AI-generated response MUST include numbered footnotes. These footnotes MUST be interactive/clickable, linking directly to the specific document segment(s) used as the source for that part of the response.
+
+### XXV. Dynamic Briefing Templates
+Document briefings (summaries/overviews) MUST NOT use a one-size-fits-all format. The system MUST detect the document type (Contract, Evidence, etc.) and apply a specialized briefing structure optimized for that specific category.
+
 ## Governance
 
 This constitution governs the SAI-Legal project. All implementation must adhere to these principles. Any deviation must be documented as a "Violation" in the implementation plan.
@@ -98,4 +109,4 @@ Amendments to this constitution require a version bump. Semantic versioning is u
 - MINOR: New principle/section added or materially expanded guidance.
 - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
 
-**Version**: 4.0.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-09
+**Version**: 4.1.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-20

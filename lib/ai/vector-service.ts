@@ -109,8 +109,9 @@ export async function processDocument(
 export async function retrieveContext(
   query: string,
   clientId: string | null = null,
-  matchThreshold = 0.7,
-  matchCount = 5
+  matchThreshold = 0.5,
+  matchCount = 10,
+  isVendorOnly = false
 ) {
   const supabase = createAdminClient();
 
@@ -123,12 +124,13 @@ export async function retrieveContext(
 
   const queryEmbedding = embeddingResponse.data[0].embedding;
 
-  // 2. Call RPC
-  const { data, error } = await supabase.rpc('retrieve_context', {
+  // 2. Call RPC (using v2 for vendor filtering support)
+  const { data, error } = await supabase.rpc('retrieve_context_v2', {
     query_embedding: queryEmbedding,
     match_threshold: matchThreshold,
     match_count: matchCount,
     target_client_id: clientId,
+    is_vendor_only: isVendorOnly
   });
 
   if (error) {

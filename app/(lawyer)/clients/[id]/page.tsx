@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FileText, ArrowLeft, Calendar, Briefcase, User } from "lucide-react"
+import { FileText, ArrowLeft, Calendar, Briefcase, User, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 export default async function ClientOverviewPage({ params }: { params: { id: string } }) {
@@ -89,22 +89,45 @@ export default async function ClientOverviewPage({ params }: { params: { id: str
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Vault Access</CardTitle>
-          <CardDescription>
-            Securely manage all legal documents and evidence for this client.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button size="lg" className="w-full" asChild>
-            <Link href={`/clients/${params.id}/vault`}>
-              <FileText className="h-4 w-4 mr-2" />
-              Open Document Vault
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Intelligence Hub
+            </CardTitle>
+            <CardDescription>
+              AI-powered chat and document briefing for this client.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" asChild>
+              <Link href={`/intelligence-hub?clientId=${params.id}`}>
+                Access Intelligence Hub
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Document Vault
+            </CardTitle>
+            <CardDescription>
+              Manage and upload all case-related documents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full" asChild>
+              <Link href={`/clients/${params.id}/vault`}>
+                Open Vault
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,7 @@ export async function uploadDocumentAction(
 
   const file = formData.get("file") as File
   const docType = formData.get("docType") as string
+  const isVendor = formData.get("isVendor") === "on"
 
   if (!file) return { error: "No file provided" }
   if (!docType) return { error: "No document type provided" }
@@ -55,6 +56,7 @@ export async function uploadDocumentAction(
       file_name: file.name,
       doc_type: docType,
       uploaded_by: user.id,
+      is_vendor: isVendor,
     })
     .select()
     .single()

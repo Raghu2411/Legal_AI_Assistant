@@ -1,39 +1,41 @@
-﻿# Legal_AI_Assistant Development Guidelines
+# Legal_AI_Assistant Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-02-25
+Auto-generated from all feature plans. Last updated: 2026-03-20
 
 ## Active Technologies
-- [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION] + [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION] (002-admin-crud-console)
-- [if applicable, e.g., PostgreSQL, CoreData, files or N/A] (002-admin-crud-console)
-- TypeScript / Next.js 14+ (App Router) + Supabase (Auth, DB, Storage), shadcn/ui, react-hook-form, zod (003-client-management)
-- PostgreSQL (`clients`, `documents`), Supabase Storage (`client-vaults`) (003-client-management)
-- TypeScript / Next.js 14+ (App Router) + `mixedbread-ai` SDK, `langchain` (RecursiveCharacterTextSplitter), `pdf-parse`, `mammoth` (for DOCX) (004-rag-infrastructure)
-- Supabase PostgreSQL (pgvector), Supabase Storage (004-rag-infrastructure)
-- TypeScript / Next.js 14+ (App Router) + Groq SDK, TipTap (Editor), shadcn/ui (Three-pane layout), Lucide React (Icons), Supabase (Storage/DB) (005-ai-contract-review)
-- Supabase PostgreSQL (`risk_analyses`, `clause_analyses`, `golden_rules`), Supabase Storage (PDF/DOCX) (005-ai-contract-review)
-
-- TypeScript / Next.js 14+ (App Router) + @supabase/auth-helpers-nextjs, @supabase/supabase-js, tailwindcss, lucide-react, shadcn/ui, react-hook-form, zod (001-auth-rbac-setup)
+- Python 3.11, FastAPI, TypeScript / Next.js 14+ (App Router), Supabase (Auth, DB, Storage, pgvector), Vercel AI SDK, Groq SDK (Llama 3.3), shadcn/ui, TipTap
 
 ## Project Structure
+- `app/`: Next.js App Router routes
+- `components/`: Reusable UI components
+- `lib/`: Shared logic, AI services, Supabase clients
+- `supabase/`: Database migrations and functions
+- `specs/`: Feature specifications and plans
 
-```text
-backend/
-frontend/
-tests/
-```
+## Active Features
+- **001-auth-rbac-setup**: RBAC (Admin, Lawyer, Client) via Supabase Auth
+- **002-admin-crud-console**: Admin dashboard for user/playbook management
+- **003-client-management**: Lawyer-facing client and document vault management
+- **004-rag-infrastructure**: Mixedbread-ai embeddings + pgvector retrieval
+- **005-ai-contract-review**: Risk analysis studio with TipTap integration
+- **006-intelligence-hub**: Tabbed AI Hub (Chat with citations, Dynamic Briefings, Vendor Mode)
 
 ## Commands
-
-npm test; npm run lint
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run lint`: Run ESLint
+- `npx supabase migration new <name>`: Create new migration
+- `npx supabase db push`: Push migrations to local DB
 
 ## Code Style
-
-TypeScript / Next.js 14+ (App Router): Follow standard conventions
+- TypeScript / Next.js 14+ (App Router): Follow standard conventions
+- Constitution Principles apply to all AI-related features
 
 ## Recent Changes
-- 005-ai-contract-review: Added TypeScript / Next.js 14+ (App Router) + Groq SDK, TipTap (Editor), shadcn/ui (Three-pane layout), Lucide React (Icons), Supabase (Storage/DB)
-- 004-rag-infrastructure: Added TypeScript / Next.js 14+ (App Router) + `mixedbread-ai` SDK, `langchain` (RecursiveCharacterTextSplitter), `pdf-parse`, `mammoth` (for DOCX)
-- 003-client-management: Added TypeScript / Next.js 14+ (App Router) + Supabase (Auth, DB, Storage), shadcn/ui, react-hook-form, zod
+- 006-intelligence-hub: Added Tabbed AI Hub with Vercel AI SDK, citation-aware Chat, Dynamic Briefings, and Metadata-filtered Vendor Mode.
+- 005-ai-contract-review: Added Risk analysis studio with TipTap integration.
+- 004-rag-infrastructure: Initialized RAG infrastructure with Mixedbread-ai.
+
 
 
 <!-- MANUAL ADDITIONS START -->
