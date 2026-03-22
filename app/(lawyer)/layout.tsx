@@ -5,7 +5,10 @@ import {
   Users, 
   LayoutDashboard,
   LogOut,
-  Briefcase
+  Briefcase,
+  Lightbulb,
+  FileSearch,
+  PenTool
 } from "lucide-react";
 
 export default function LawyerLayout({
@@ -29,6 +32,29 @@ export default function LawyerLayout({
               Dashboard
             </span>
           </Link>
+          
+          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+            Workspace
+          </div>
+          
+          <Link href="/dashboard/drafting">
+            <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
+              <PenTool className="h-4 w-4" />
+              Smart Drafting
+            </span>
+          </Link>
+          
+          <Link href="/intelligence-hub">
+            <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
+              <Lightbulb className="h-4 w-4" />
+              Intelligence Hub
+            </span>
+          </Link>
+
+          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+            Management
+          </div>
+
           <Link href="/clients">
             <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
               <Users className="h-4 w-4" />

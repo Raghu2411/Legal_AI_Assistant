@@ -1,13 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: 4.0.0 -> 4.1.0
+- Version change: 4.1.0 -> 4.2.0
 - List of modified principles:
-  - Added XXII. Strict Retrieval Constraint
-  - Added XXIII. Session Context Persistence
-  - Added XXIV. Source Attribution via Footnotes
-  - Added XXV. Dynamic Briefing Templates
+  - Added XXVI. Mandatory Client Context
+  - Added XXVII. Interactive Interview Drafting
+  - Added XXVIII. Manual Override Sovereignty
+  - Added XXIX. Automatic RAG Indexing
+  - Added XXX. Explicit Email Generation
 - Added sections:
-  - Principles XXII through XXV covering Intelligence Hub (Step 6).
+  - Principles XXVI through XXX covering Smart Drafting Studio (Step 7).
 - Templates requiring updates:
   - .specify/templates/plan-template.md (✅ updated)
   - .specify/templates/spec-template.md (✅ updated)
@@ -100,6 +101,21 @@ Every AI-generated response MUST include numbered footnotes. These footnotes MUS
 ### XXV. Dynamic Briefing Templates
 Document briefings (summaries/overviews) MUST NOT use a one-size-fits-all format. The system MUST detect the document type (Contract, Evidence, etc.) and apply a specialized briefing structure optimized for that specific category.
 
+### XXVI. Mandatory Client Context
+A Client MUST be selected before drafting starts to ensure data consistency and prevent orphaned documents. This context ensures all generated content is correctly attributed and secured via RLS.
+
+### XXVII. Interactive Interview Drafting
+The drafting process MUST be an interactive interview; the AI asks clarifying questions and the document updates in real-time based on user responses. This ensures the drafted document aligns precisely with the lawyer's intent.
+
+### XXVIII. Manual Override Sovereignty
+Lawyers MUST have full manual override capability over any AI-generated text. The AI is a co-pilot designed to accelerate drafting, but the lawyer remains the final authority on all legal language.
+
+### XXIX. Automatic RAG Indexing
+Saving a finalized document MUST automatically trigger its indexing into the RAG vector database. This ensures that new drafts are immediately available for retrieval and analysis within the Intelligence Hub.
+
+### XXX. Explicit Email Generation
+Cover emails MUST only be generated upon an explicit 'Draft Email' action by the user. Automatic or background generation of emails is prohibited to ensure lawyers review all outbound communication.
+
 ## Governance
 
 This constitution governs the SAI-Legal project. All implementation must adhere to these principles. Any deviation must be documented as a "Violation" in the implementation plan.
@@ -109,4 +125,4 @@ Amendments to this constitution require a version bump. Semantic versioning is u
 - MINOR: New principle/section added or materially expanded guidance.
 - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
 
-**Version**: 4.1.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-20
+**Version**: 4.2.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-22

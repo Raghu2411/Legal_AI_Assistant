@@ -35,12 +35,20 @@ export async function updateSession(request: NextRequest) {
     const { data, error } = await supabase.auth.getUser()
     if (error) {
       // Log error but don't crash
-      console.warn('Middleware Auth User error:', error.message)
+      console.warn('Middleware Auth User error details:', {
+        message: error.message,
+        status: error.status,
+        name: error.name
+      })
     }
     user = data?.user
-  } catch (error) {
+  } catch (error: any) {
     // If we hit an auth error, we treat the user as logged out
-    console.error('Middleware Auth Error:', error)
+    console.error('Middleware Auth Critical Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    })
   }
 
   const url = new URL(request.url)
