@@ -9,7 +9,8 @@ A highly specialized legal assistant built with Next.js, Supabase, and Groq (Lla
 - **Step 3: Client & Case Management** ✅
 - **Step 4: RAG Infrastructure** ✅
 - **Step 5: AI Contract Review (Review Studio)** ✅
-- **Step 6: Intelligence Hub** 🚀 (In Progress)
+- **Step 6: Intelligence Hub** ✅
+- **Step 7: Smart Drafting Studio** ✅
 
 ## 📂 Project Structure: SQL & Policies
 All database logic is version-controlled in the following locations:
@@ -23,7 +24,7 @@ All database logic is version-controlled in the following locations:
 - **Framework**: Next.js 14+ (App Router)
 - **Database & Auth**: Supabase (Postgres, Auth, Storage, RLS, pgvector)
 - **AI/LLM**: Groq SDK (Llama 3.3 70B) + Mixedbread AI (Embeddings) + Vercel AI SDK (`ai`)
-- **Editor**: TipTap (ProseMirror-based) for Side-by-Side Redlining
+- **Editor**: TipTap (ProseMirror-based) for Side-by-Side Redlining & Smart Drafting
 - **UI Components**: shadcn/ui (Tabs, ScrollArea, Dialog, etc.)
 - **Libraries**: `langchain` (@langchain/textsplitters), `pdf-parse`, `mammoth` (DOCX), `react-pdf`, `docx`
 
@@ -57,8 +58,8 @@ All database logic is version-controlled in the following locations:
 
    ```sql
    -- 1. Enums for AI Analysis
-   CREATE TYPE risk_level AS ENUM ('green', 'yellow', 'red');
-   CREATE TYPE scan_status AS ENUM ('pending', 'completed', 'failed');
+   CREATE TYPE risk_status AS ENUM ('green', 'yellow', 'red');
+   CREATE TYPE analysis_status AS ENUM ('pending', 'completed', 'failed');
 
    -- 2. Golden Rules (Admin Control)
    CREATE TABLE golden_rules (
@@ -76,7 +77,7 @@ All database logic is version-controlled in the following locations:
      document_id uuid REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
      timestamp timestamptz DEFAULT now(),
      version integer DEFAULT 1,
-     status scan_status DEFAULT 'pending',
+     status analysis_status DEFAULT 'pending',
      raw_json jsonb DEFAULT '{}'::jsonb
    );
 
@@ -85,10 +86,10 @@ All database logic is version-controlled in the following locations:
      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
      risk_analysis_id uuid REFERENCES risk_analyses(id) ON DELETE CASCADE NOT NULL,
      original_text text NOT NULL,
-     risk_status risk_level NOT NULL,
+     risk_status risk_status NOT NULL,
      rationale text,
      suggested_rewrite text,
-     user_overridden_status risk_level,
+     user_overridden_status risk_status,
      user_override_rationale text,
      is_gap boolean DEFAULT false,
      created_at timestamptz DEFAULT now()
@@ -132,24 +133,6 @@ All database logic is version-controlled in the following locations:
    CREATE POLICY "Lawyers manage clause assessments" 
      ON clause_analyses FOR ALL 
      USING (risk_analysis_id IN (SELECT id FROM risk_analyses WHERE document_id IN (SELECT id FROM documents WHERE client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()))));
-
--- Policies
--- Allow lawyers and admins to update documents they have access to
-    CREATE POLICY "Lawyers can update their own documents" ON documents
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM clients
-            WHERE id = documents.client_id
-            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM clients
-            WHERE id = documents.client_id
-            AND (lawyer_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin')
-        )
-   );
    ```
 
    ### Step 6: Intelligence Hub
@@ -159,16 +142,18 @@ All database logic is version-controlled in the following locations:
    -- 1. Metadata Extension: Vendor Document Identification
    ALTER TABLE public.documents ADD COLUMN is_vendor boolean DEFAULT false;
 
-   -- 2. Enhanced Retrieval: pgvector with Metadata Filtering
+   -- 2. Enhanced Retrieval: pgvector with Metadata Filtering (v2)
    -- This replaces or complements retrieve_context to support Vendor Mode
-   CREATE OR REPLACE FUNCTION public.retrieve_context_with_vendor(
+   CREATE OR REPLACE FUNCTION public.retrieve_context_v2(
      query_embedding vector(1024),
      match_threshold float,
      match_count int,
-     target_client_id uuid,
-     vendor_only boolean DEFAULT false
+     target_client_id uuid DEFAULT NULL,
+     is_vendor_only boolean DEFAULT false
    )
    RETURNS TABLE (
+     id uuid,
+     document_id uuid,
      content text,
      metadata jsonb,
      similarity float
@@ -178,13 +163,15 @@ All database logic is version-controlled in the following locations:
    BEGIN
      RETURN QUERY
      SELECT
+       e.id,
+       e.document_id,
        e.content,
        e.metadata,
        1 - (e.embedding <=> query_embedding) AS similarity
      FROM public.embeddings e
      JOIN public.documents d ON e.document_id = d.id
      WHERE (e.client_id = target_client_id OR e.client_id IS NULL)
-       AND (NOT vendor_only OR d.is_vendor = true)
+       AND (NOT is_vendor_only OR d.is_vendor = true)
        AND 1 - (e.embedding <=> query_embedding) > match_threshold
      ORDER BY e.embedding <=> query_embedding
      LIMIT match_count;
@@ -192,8 +179,37 @@ All database logic is version-controlled in the following locations:
    $$;
    ```
 
+   ### Step 7: Smart Drafting Studio
+   Run this SQL to enable the "Smart Drafting Studio" features:
+
+   ```sql
+   -- 1. Metadata Extensions: Drafting Identification
+   ALTER TABLE public.documents ADD COLUMN is_draft boolean DEFAULT false;
+   ALTER TABLE public.documents ADD COLUMN draft_metadata jsonb DEFAULT '{}'::jsonb;
+
+   -- 2. Activity Logs: Audit Trail for Drafting & Emails
+   CREATE TABLE activity_logs (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+     client_id uuid REFERENCES clients(id) ON DELETE CASCADE,
+     action_type text NOT NULL, -- 'DRAFTING_START', 'DRAFTING_FINALIZE', 'EMAIL_GENERATED'
+     metadata jsonb DEFAULT '{}'::jsonb,
+     created_at timestamptz DEFAULT now()
+   );
+
+   -- 3. Row Level Security (RLS)
+   ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Lawyers view own activity logs" 
+     ON activity_logs FOR SELECT 
+     USING (user_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Lawyers create own activity logs" 
+     ON activity_logs FOR INSERT 
+     WITH CHECK (user_id = auth.uid() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   ```
+
 4. **Storage Setup**:
    - Ensure the `client-vaults` bucket is configured for private access.
+   - Ensure the `client-documents` bucket is configured for private access (Drafting output).
    - Files are stored as: `client-vaults/[client_id]/[document_id]/[filename]`.
 
 5. **Step-by-Step Step 5 Setup (Review Studio)**:
@@ -210,13 +226,22 @@ All database logic is version-controlled in the following locations:
    4. **Briefings**: Switch to the **Briefing** tab to see a dynamic summary tailored to the document's type (Contract, Evidence, etc.).
    5. **Vendor Mode**: Toggle **Vendor Mode** to ON to restrict all AI analysis and retrieval to vendor-specific documents only.
 
+7. **Step-by-Step Step 7 Setup (Smart Drafting Studio)**:
+   1. **Prerequisite**: Ensure `GROQ_API_KEY` is configured for Llama 3.3.
+   2. **Initialize Session**: Navigate to `/dashboard/drafting`.
+   3. **Client & Context**: Select a **Client**, choose a **Document Type** (e.g., NDA), and enter a **Document Name**.
+   4. **Precedents**: Select up to 3 existing documents from the Client's Vault to serve as precedents for the AI.
+   5. **Interview**: Engage with the AI co-pilot in the Left Panel. Your responses will trigger real-time clause generation in the Right Panel (TipTap Editor).
+   6. **Finalize**: Click **Finalize & Save** to generate the final file, upload it to the `client-documents` bucket, and automatically trigger RAG indexing.
+   7. **Email Delivery**: Once saved, use the **Draft Email** utility to generate a professional cover letter based on the drafted content.
+
 ## Roles & Access
 - **Admin**: Full access to oversight routes (Users, Logs, Playbook, Clients) and semantic oversight. Manages global "Golden Rules."
-- **Lawyer**: Access to their specific dashboard, client management, and AI retrieval. Performs interactive document reviews in the Review Studio.
+- **Lawyer**: Access to their specific dashboard, client management, and AI retrieval. Performs interactive document reviews in the Review Studio and drafts new documents in the Smart Drafting Studio.
 - **Security**: Strict client-data isolation enforced at the database (RLS) and vector level.
 
 ## To-Do / Roadmap
 - [x] **Step 5: AI Contract Review**: Review Studio with side-by-side redlining and traffic-light risk assessment.
-- [ ] **Step 6: Intelligence Hub**: Conversational Chat with session memory, Dynamic Briefings, and Vendor Mode filtering.
-- [ ] **Step 7: Automated Compliance**: Firm-wide dashboard for tracking compliance rates across all documents.
+- [x] **Step 6: Intelligence Hub**: Conversational Chat with session memory, Dynamic Briefings, and Vendor Mode filtering.
+- [x] **Step 7: Smart Drafting Studio**: Interactive AI-Interview Drafting with TipTap sync and precedent grounding.
 - [ ] **Step 8: Notifications**: Email alerts for critical audit events and risk detections.

@@ -1,12 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import IntelligenceHubDashboard from "@/components/intelligence-hub/intelligence-hub-dashboard";
+import DraftingDashboard from "@/components/drafting/drafting-dashboard";
 
-export default async function IntelligenceHubPage({
-  searchParams,
-}: {
-  searchParams: { clientId?: string };
-}) {
+export default async function DraftingPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -28,10 +24,5 @@ export default async function IntelligenceHubPage({
     );
   }
 
-  return (
-    <IntelligenceHubDashboard 
-      initialClients={clients || []} 
-      initialClientId={searchParams.clientId} 
-    />
-  );
+  return <DraftingDashboard initialClients={clients || []} user={user} />;
 }
