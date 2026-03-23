@@ -21,7 +21,7 @@ export async function chatStream(
     encoding_format: 'float'
   });
 
-  const queryEmbedding = embeddingResponse.data[0].embedding;
+  const queryEmbedding = embeddingResponse.data[0].embedding as number[];
 
   // 2. Retrieve context
   const context = await retrieveContextV2({

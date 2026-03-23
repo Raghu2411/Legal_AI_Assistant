@@ -89,7 +89,7 @@ export function RiskItem({
           "text-xs font-medium line-clamp-2 italic border-l-2 border-current pl-2",
           isGap ? "text-red-900" : "text-muted-foreground"
         )}>
-          "{originalText}"
+          &quot;{originalText}&quot;
         </p>
         <p className="text-xs">
           {rationale}

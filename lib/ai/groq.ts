@@ -12,9 +12,18 @@ const groq = new Groq({
 export async function getFirmContext() {
   const supabase = createClient();
 
+  // 1. Fetch ALL active Golden Rules from the dedicated table
+  const { data: rules } = await supabase
+    .from("golden_rules")
+    .select("rule_text")
+    .order("priority", { ascending: true });
+
+  const goldenRulesText = rules?.map(r => `• ${r.rule_text}`).join("\n") || "No Golden Rules defined.";
+
+  // 2. Fetch the latest Playbook metadata
   const { data: latest } = await supabase
     .from("playbooks")
-    .select("golden_rules, file_name, file_path")
+    .select("file_name, file_path")
     .order("version", { ascending: false })
     .limit(1)
     .single();
@@ -36,7 +45,7 @@ export async function getFirmContext() {
   }
 
   return {
-    goldenRules: latest?.golden_rules || "No Golden Rules defined.",
+    goldenRules: goldenRulesText,
     playbookName: latest?.file_name || "No Playbook uploaded.",
     handbookText: handbookText || "Full handbook text unavailable.",
   };

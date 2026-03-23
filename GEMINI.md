@@ -8,6 +8,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-20
 - Supabase PostgreSQL (pgvector), Supabase Storage (client-documents bucket) (007-smart-drafting-studio)
 - TypeScript / Next.js 14+ (App Router), Python 3.11 (FastAPI) + shadcn/ui, Groq SDK (Llama 3.3), Supabase, Vercel AI SDK (008-smart-triage-operations)
 - Supabase (PostgreSQL, pgvector) (008-smart-triage-operations)
+- Python 3.11 (FastAPI), TypeScript (Next.js 14 App Router) + `python-docx` (for server-side generation), `groq` (Llama 3.3 for audit), `supabase-js` (009-policy-evolution)
+- Supabase (PostgreSQL), Supabase Storage (DOCX artifacts) (009-policy-evolution)
 
 ## Project Structure
 - `app/`: Next.js App Router routes
@@ -36,9 +38,9 @@ Auto-generated from all feature plans. Last updated: 2026-03-20
 - Constitution Principles apply to all AI-related features
 
 ## Recent Changes
+- 009-policy-evolution: Added Python 3.11 (FastAPI), TypeScript (Next.js 14 App Router) + `python-docx` (for server-side generation), `groq` (Llama 3.3 for audit), `supabase-js`
 - 008-smart-triage-operations: Added TypeScript / Next.js 14+ (App Router), Python 3.11 (FastAPI) + shadcn/ui, Groq SDK (Llama 3.3), Supabase, Vercel AI SDK
 - 007-smart-drafting-studio: Added TypeScript (Next.js 14 App Router), Python 3.11 (FastAPI) + Tiptap, shadcn/ui, Groq SDK (Llama 3.3), Vercel AI SDK, Supabase (Auth, DB, Storage, Vector)
-- 006-intelligence-hub: Added Tabbed AI Hub with Vercel AI SDK, citation-aware Chat, Dynamic Briefings, and Metadata-filtered Vendor Mode.
 
 
 

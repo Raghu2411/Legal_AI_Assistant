@@ -12,6 +12,7 @@ A highly specialized legal assistant built with Next.js, Supabase, and Groq (Lla
 - **Step 6: Intelligence Hub** ✅
 - **Step 7: Smart Drafting Studio** ✅
 - **Step 8: Smart Triage & Operations** ✅
+- **Step 9: Policy Evolution Studio** ✅
 
 ## 📂 Project Structure: SQL & Policies
 All database logic is version-controlled in the following locations:
@@ -242,11 +243,79 @@ All database logic is version-controlled in the following locations:
    CREATE POLICY "Lawyers delete obligations" 
      ON obligations FOR DELETE 
      USING (client_id IN (SELECT id FROM clients WHERE lawyer_id = auth.uid()) OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+   ### Step 9: Policy Evolution Studio
+   Run this SQL to enable the "Policy Evolution Studio" features:
+
+   ```sql
+   -- 1. Compliance Standards: External regulatory documents
+   CREATE TABLE compliance_standards (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     name text NOT NULL,
+     storage_path text NOT NULL,
+     uploaded_by uuid REFERENCES auth.users(id) NOT NULL,
+     uploaded_at timestamptz DEFAULT now()
+   );
+
+   -- 2. Policy Suggestions: Transient AI-proposed changes
+   CREATE TABLE policy_suggestions (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     standard_id uuid REFERENCES compliance_standards(id) ON DELETE CASCADE NOT NULL,
+     target_type text NOT NULL CHECK (target_type IN ('playbook', 'golden_rule')),
+     target_id uuid NOT NULL,
+     current_text text,
+     suggested_text text NOT NULL,
+     rationale text,
+     status text DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+     created_at timestamptz DEFAULT now()
+   );
+
+   -- 3. Version History: Immutable audit trail (XXXVIII)
+   CREATE TABLE version_history (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     entity_type text NOT NULL CHECK (entity_type IN ('playbook', 'golden_rule')),
+     entity_id uuid NOT NULL,
+     field text NOT NULL,
+     old_value jsonb,
+     new_value jsonb,
+     change_type text DEFAULT 'update' CHECK (change_type IN ('update', 'rollback')),
+     user_id uuid REFERENCES auth.users(id) NOT NULL,
+     timestamp timestamptz DEFAULT now()
+   );
+
+   -- 4. Playbook Table Updates (XXXVI)
+   CREATE TABLE playbooks (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     name text NOT NULL,
+     content jsonb NOT NULL, -- Structured sections/clauses
+     version integer DEFAULT 1,
+     status text DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+     last_updated_by uuid REFERENCES auth.users(id),
+     last_updated_at timestamptz DEFAULT now()
+   );
+
+   -- 5. Row Level Security (RLS)
+   ALTER TABLE compliance_standards ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Admins manage compliance standards" ON compliance_standards FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+   ALTER TABLE policy_suggestions ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Admins manage suggestions" ON policy_suggestions FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+   ALTER TABLE version_history ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Admins view version history" ON version_history FOR SELECT USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "System/Admins create history" ON version_history FOR INSERT WITH CHECK ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+   ALTER TABLE playbooks ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "Lawyers view published playbooks" ON playbooks FOR SELECT USING (status = 'published' OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   CREATE POLICY "Admins manage playbooks" ON playbooks FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+   ```
    ```
 
 4. **Storage Setup**:
    - Ensure the `client-vaults` bucket is configured for private access.
    - Ensure the `client-documents` bucket is configured for private access (Drafting output).
+   - Ensure the `compliance-standards` bucket is configured for private access (Admin audit input).
+   - Ensure the `firm-playbooks` bucket is configured for private access (Generated DOCX artifacts).
    - Files are stored as: `client-vaults/[client_id]/[document_id]/[filename]`.
 
 5. **Step-by-Step Step 5 Setup (Review Studio)**:
@@ -282,6 +351,17 @@ All database logic is version-controlled in the following locations:
    7. **Enhanced Calendar View**: View confirmed milestones on the visual calendar. Click any event to see a detailed popover containing the **Client Name**, **Case ID**, and **Document Name**.
    8. **Audit Trail**: View detailed logs of all triage decisions and confirmations in the **Activity Log** (Step 7 extension).
 
+9. **Step-by-Step Step 9 Setup (Policy Evolution Studio)**:
+   1. **Admin Access**: Navigate to the **Evolution Studio** under the Admin Dashboard.
+   2. **Audit & Analysis**: Click **Upload Standard** to submit a regulatory PDF/DOCX. AI will perform a semantic Gap Analysis against the current `playbooks` and `golden_rules`.
+   3. **Studio Review**: Use the side-by-side view to compare current policy with AI suggestions. Use checkboxes to select improvements.
+   4. **Approval & Update**: Click **Approve & Update**. This atomically updates the database and increments the version.
+   5. **Playbook Generation**: Click **Generate Playbook** to trigger the server-side DOCX generator (`python-docx`).
+   6. **RAG Synchronization**: Generation automatically triggers `processDocument` to re-index the new Playbook version into the vector database (XXXVI).
+   7. **Instant Rule Propagation**: Golden Rules are updated in real-time. Active triage/review operations will use the new logic on their next run (XXXVII).
+   8. **Accountability Review**: Switch to the **Version History** tab to view the immutable audit trail with "Before vs After" diffs for every policy change.
+   9. **Rollback**: If needed, use the **Rollback** button on any history entry to revert the firm's policy to a previous state instantly.
+
 ## Roles & Access
 - **Admin**: Full access to oversight routes (Users, Logs, Playbook, Clients) and semantic oversight. Manages global "Golden Rules."
 - **Lawyer**: Access to their specific dashboard, client management, and AI retrieval. Performs document reviews, drafting sessions, and operational triage/confirmation.
@@ -292,3 +372,4 @@ All database logic is version-controlled in the following locations:
 - [x] **Step 6: Intelligence Hub**: Conversational Chat with session memory, Dynamic Briefings, and Vendor Mode filtering.
 - [x] **Step 7: Smart Drafting Studio**: Interactive AI-Interview Drafting with TipTap sync and precedent grounding.
 - [x] **Step 8: Smart Triage & Operations**: AI-driven triage, obligation verification, and visual operational calendar.
+- [x] **Step 9: Policy Evolution Studio**: Admin Evolution Studio with AI gap analysis, DOCX generation, and policy rollback.

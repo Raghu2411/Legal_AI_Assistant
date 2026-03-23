@@ -78,7 +78,7 @@ export function ChatPanel({ clientId, isVendorOnly = false }: ChatPanelProps) {
               <Bot className="h-12 w-12 text-muted-foreground/50" />
               <h3 className="text-lg font-semibold">Intelligence Chat</h3>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Ask anything about this client's documents. Responses are grounded in the vault.
+                Ask anything about this client&apos;s documents. Responses are grounded in the vault.
               </p>
             </div>
           )}

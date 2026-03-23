@@ -1,13 +1,13 @@
 <!--
 Sync Impact Report:
-- Version change: 4.3.0 → 4.4.0
+- Version change: 4.4.0 → 4.5.0
 - List of modified principles:
-  - Ratified XXXI. Golden Rule Triage
-  - Ratified XXXII. Obligation Verification
-  - Ratified XXXIII. Dual-Layer Compliance
-  - Ratified XXXIV. Operational Auditability
+  - Ratified XXXV. Compliance-Driven Auditing
+  - Ratified XXXVI. Versioned Policy Evolution
+  - Ratified XXXVII. Instant Golden Rule Synchronization
+  - Ratified XXXVIII. Immutable Policy Audit Trail
 - Added sections:
-  - Formal ratification of Step 8: Smart Triage & Operations principles.
+  - Formal ratification of Step 9: Policy Evolution principles.
 - Templates requiring updates:
   - .specify/templates/plan-template.md (✅ updated)
   - .specify/templates/spec-template.md (✅ updated)
@@ -127,6 +127,18 @@ Compliance checks must cover both internal Admin-defined policies and general re
 ### XXXIV. Operational Auditability
 The system must maintain an immutable operational audit trail of triage decisions, confirmations, and compliance checks, visible to Admins for firm-wide quality assurance.
 
+### XXXV. Compliance-Driven Auditing
+Admins MUST have the ability to audit existing Playbooks and Golden Rules against uploaded external Compliance Standards. This gap analysis identifies necessary updates to ensure the firm's legal logic remains current with regulatory changes.
+
+### XXXVI. Versioned Policy Evolution
+Approved improvements to a Playbook MUST trigger a mandatory version increment and an automatic re-execution of the RAG pipeline. This ensures all AI reasoning is synchronized with the most recent, validated legal standards.
+
+### XXXVII. Instant Golden Rule Synchronization
+Approved modifications to Golden Rules MUST result in an immediate, atomic update to the production database. These rules take precedence and must be reflected across all active AI review and triage processes without delay.
+
+### XXXVIII. Immutable Policy Audit Trail
+All modifications to Playbooks, Golden Rules, or Compliance Standards MUST be logged in an immutable audit trail. Each entry MUST capture the 'Before' and 'After' states of the policy to provide a transparent history of the firm's legal evolution.
+
 ## Governance
 
 This constitution governs the SAI-Legal project. All implementation must adhere to these principles. Any deviation must be documented as a "Violation" in the implementation plan.
@@ -136,5 +148,4 @@ Amendments to this constitution require a version bump. Semantic versioning is u
 - MINOR: New principle/section added or materially expanded guidance.
 - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
 
-**Version**: 4.4.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-22
-
+**Version**: 4.5.0 | **Ratified**: 2026-02-25 | **Last Amended**: 2026-03-22

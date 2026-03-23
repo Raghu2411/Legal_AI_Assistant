@@ -6,7 +6,8 @@ import {
   History, 
   BookOpen, 
   LayoutDashboard,
-  LogOut
+  LogOut,
+  Zap
 } from "lucide-react";
 
 export default function AdminLayout({
@@ -28,6 +29,12 @@ export default function AdminLayout({
             <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
               <LayoutDashboard className="h-4 w-4" />
               Overview
+            </span>
+          </Link>
+          <Link href="/admin/evolution">
+            <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors text-primary font-bold">
+              <Zap className="h-4 w-4" />
+              Evolution Studio
             </span>
           </Link>
           <Link href="/admin/users">

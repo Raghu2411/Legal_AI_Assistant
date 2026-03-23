@@ -47,7 +47,7 @@ const EditorPanel = forwardRef<EditorPanelHandle, EditorPanelProps>(({ content, 
       // We only force set content if it's the initial load or a reset
       // Normal updates should flow through onUpdate or appendContent
       if (editor.isEmpty && content) {
-        editor.commands.setContent(content, false);
+        editor.commands.setContent(content, { emitUpdate: false });
       }
     }
   }, [content, editor]);

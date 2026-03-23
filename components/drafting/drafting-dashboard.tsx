@@ -104,7 +104,7 @@ export default function DraftingDashboard({ initialClients, user }: DraftingDash
         <div className="max-w-md">
           <h2 className="text-3xl font-bold">Document Finalized!</h2>
           <p className="text-muted-foreground mt-2">
-            "{session.docName}" has been saved to the client vault and is being indexed for Intelligence Hub.
+            &quot;{session.docName}&quot; has been saved to the client vault and is being indexed for Intelligence Hub.
           </p>
         </div>
         <div className="flex flex-wrap gap-4 justify-center">
