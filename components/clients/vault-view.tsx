@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Download, Trash2, FileIcon, Clock, Eye, RefreshCw, Loader2, Sparkles } from "lucide-react"
 import { deleteDocumentAction } from "@/lib/clients/document-actions"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { VectorStatusBadge, VectorStatus } from "@/components/ui/vector-status-badge"
 import Link from "next/link"
@@ -30,17 +30,25 @@ interface Document {
 export function VaultView({ 
   clientId, 
   documents: initialDocuments,
-  showReview = true
+  showReview = true,
+  showTriage = true,
+  showRevectorize = true
 }: { 
   clientId: string
   documents: Document[]
   showReview?: boolean
+  showTriage?: boolean
+  showRevectorize?: boolean
 }) {
   const [documents, setDocuments] = useState(initialDocuments)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [revectorizingId, setRevectorizingId] = useState<string | null>(null)
   const [triagingId, setTriagingId] = useState<string | null>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    setDocuments(initialDocuments)
+  }, [initialDocuments])
 
   const handleTriage = async (docId: string) => {
     setTriagingId(docId)
@@ -153,34 +161,38 @@ export function VaultView({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1 md:gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="gap-1 md:gap-2 h-8 border-primary/50 text-primary hover:bg-primary/5"
-                    onClick={() => handleTriage(doc.id)}
-                    disabled={triagingId === doc.id}
-                  >
-                    {triagingId === doc.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    <span className="hidden sm:inline">Triage Scan</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="gap-1 md:gap-2 h-8"
-                    onClick={() => handleRevectorize(doc.id)}
-                    disabled={revectorizingId === doc.id}
-                  >
-                    {revectorizingId === doc.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    )}
-                    <span className="hidden sm:inline">Re-vectorize</span>
-                  </Button>
+                  {showTriage && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="gap-1 md:gap-2 h-8 border-primary/50 text-primary hover:bg-primary/5"
+                      onClick={() => handleTriage(doc.id)}
+                      disabled={triagingId === doc.id}
+                    >
+                      {triagingId === doc.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      <span className="hidden sm:inline">Triage Scan</span>
+                    </Button>
+                  )}
+                  {showRevectorize && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="gap-1 md:gap-2 h-8"
+                      onClick={() => handleRevectorize(doc.id)}
+                      disabled={revectorizingId === doc.id}
+                    >
+                      {revectorizingId === doc.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      <span className="hidden sm:inline">Re-vectorize</span>
+                    </Button>
+                  )}
                   {showReview && (
                     <Button 
                       variant="outline" 

@@ -136,7 +136,7 @@ export default async function AdminClientVaultPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 sm:p-6">
-              <VaultView clientId={params.id} documents={documents} showReview={false} />
+              <VaultView clientId={params.id} documents={documents} showReview={false} showTriage={false} showRevectorize={false} />
             </CardContent>
           </Card>
         </div>

@@ -5,7 +5,7 @@ export async function extractTextFromFile(buffer: Buffer, fileType: string): Pro
   console.log('extractTextFromFile: Starting extraction, buffer size:', buffer.length, 'Type:', fileType);
   
   try {
-    if (fileType === 'application/pdf' || fileType.endsWith('.pdf')) {
+    if (fileType === 'application/pdf' || fileType.endsWith('.pdf') || fileType === 'pdf') {
       // PDF Parsing Logic using classic pdf-parse (v1.1.1)
       // We use a dynamic require to avoid bundling issues
       const pdf = require('pdf-parse');
@@ -18,16 +18,21 @@ export async function extractTextFromFile(buffer: Buffer, fileType: string): Pro
       return extractedText;
     } 
     
-    if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileType.endsWith('.docx')) {
+    if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+        fileType.endsWith('.docx') || 
+        fileType === 'docx') {
       // DOCX Parsing Logic using Mammoth
       const mammoth = require('mammoth');
-      const result = await mammoth.extractRawText({ buffer });
+      // Convert to Uint8Array to ensure jszip doesn't get confused by Node's Buffer extensions
+      // when running in certain bundled/SSR environments.
+      const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+      const result = await mammoth.extractRawText({ buffer: uint8Array });
       const extractedText = result.value || "";
       console.log('extractTextFromFile: Successfully extracted DOCX text, length:', extractedText.length);
       return extractedText;
     }
 
-    if (fileType === 'text/plain' || fileType.endsWith('.txt')) {
+    if (fileType === 'text/plain' || fileType.endsWith('.txt') || fileType === 'txt') {
       const extractedText = buffer.toString('utf8');
       console.log('extractTextFromFile: Successfully read TXT text, length:', extractedText.length);
       return extractedText;
