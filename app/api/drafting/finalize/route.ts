@@ -49,7 +49,7 @@ export async function POST(req: Request) {
             ],
           }),
           new Paragraph({ text: "" }), // Spacer
-          ...plainText.split('\n').map(line => new Paragraph({
+          ...plainText.split('\n').map((line: string) => new Paragraph({
             children: [new TextRun(line)],
           })),
         ],
