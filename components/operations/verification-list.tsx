@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ObligationItem } from "./obligation-item";
 import { ComplianceSidebar } from "./compliance-sidebar";
@@ -11,7 +11,7 @@ export function VerificationList({ clientId }: { clientId?: string }) {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const fetchObligations = async () => {
+  const fetchObligations = useCallback(async () => {
     let query = supabase
       .from("obligations")
       .select("*")
@@ -30,7 +30,7 @@ export function VerificationList({ clientId }: { clientId?: string }) {
       setSelectedOb(results[0]);
     }
     setLoading(false);
-  };
+  }, [supabase, clientId, selectedOb]);
 
   useEffect(() => {
     fetchObligations();
@@ -46,7 +46,7 @@ export function VerificationList({ clientId }: { clientId?: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, clientId]);
+  }, [supabase, fetchObligations]);
 
   const handleSuccess = (id: string) => {
     setObligations(prev => {

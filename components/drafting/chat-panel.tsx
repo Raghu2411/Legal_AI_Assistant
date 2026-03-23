@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useChat } from 'ai/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,23 +45,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Incremental Clause Extraction
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'assistant') {
-        extractNewClauses(lastMessage.content);
-      }
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const extractNewClauses = (text: string) => {
+  const extractNewClauses = useCallback((text: string) => {
     // Regex for fully captured clauses: [[CLAUSE: content ]]
     const clauseRegex = /\[\[CLAUSE:\s*([\s\S]*?)\]\]/g;
     let match;
@@ -84,7 +68,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     if (updated) {
       setProcessedClauses(newProcessed);
     }
-  };
+  }, [processedClauses, onClauseUpdate]);
+
+  // Incremental Clause Extraction
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        extractNewClauses(lastMessage.content);
+      }
+    }
+  }, [messages, extractNewClauses]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <div className="flex flex-col h-full bg-background border-r overflow-hidden">

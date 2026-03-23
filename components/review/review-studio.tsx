@@ -46,32 +46,7 @@ export function ReviewStudio({ document: doc, initialAnalysis, documentText, sca
   const lastSavedContent = useRef(doc.current_content || documentText);
 
   // Automatic Scan Trigger (Principle XVII)
-  useEffect(() => {
-    if (!analysis && doc.review_status === "uploaded" && !isScanning && !scanStarted.current) {
-      scanStarted.current = true;
-      handleStartScan();
-    }
-  }, [analysis, doc.review_status]);
-
-  const handleSaveContent = useCallback(async (content: string) => {
-    setIsSaving(true);
-    try {
-      const result = await saveDocumentContent(doc.id, content);
-      if (result.success) {
-        lastSavedContent.current = content;
-        alert("Changes saved successfully.");
-      } else {
-        alert("Failed to save: " + result.error);
-      }
-    } catch (err: any) {
-      console.error("Failed to save content", err);
-      alert("An error occurred while saving: " + err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [doc.id]);
-
-  const handleStartScan = async () => {
+  const handleStartScan = useCallback(async () => {
     setIsScanning(true);
     setError(null);
     try {
@@ -88,7 +63,14 @@ export function ReviewStudio({ document: doc, initialAnalysis, documentText, sca
     } finally {
       setIsScanning(false);
     }
-  };
+  }, [doc.id]);
+
+  useEffect(() => {
+    if (!analysis && doc.review_status === "uploaded" && !isScanning && !scanStarted.current) {
+      scanStarted.current = true;
+      handleStartScan();
+    }
+  }, [analysis, doc.review_status, isScanning, handleStartScan]);
 
   const handleAcceptRewrite = async () => {
     if (!selectedRisk || !editorRef.current) return;

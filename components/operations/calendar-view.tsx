@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ export function CalendarView({ clientId }: { clientId?: string }) {
   const [selectedOb, setSelectedOb] = useState<any>(null);
   const supabase = createClient();
 
-  const fetchConfirmed = async () => {
+  const fetchConfirmed = useCallback(async () => {
     let query = supabase
       .from("obligations")
       .select(`
@@ -28,7 +28,7 @@ export function CalendarView({ clientId }: { clientId?: string }) {
 
     const { data } = await query;
     setObligations(data || []);
-  };
+  }, [supabase, clientId]);
 
   useEffect(() => {
     fetchConfirmed();
@@ -43,7 +43,7 @@ export function CalendarView({ clientId }: { clientId?: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, clientId]);
+  }, [supabase, fetchConfirmed]);
 
   const handleActionSuccess = (id: string) => {
     setObligations(prev => prev.filter(ob => ob.id !== id));
