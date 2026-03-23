@@ -1,19 +1,19 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 
-export function VaultSearch() {
+function SearchInput() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [query, setQuery] = useState(searchParams?.get('q') || '');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (query.trim()) {
       params.set('q', query.trim());
     } else {
@@ -36,5 +36,13 @@ export function VaultSearch() {
         <span className="sr-only">Search</span>
       </Button>
     </form>
+  );
+}
+
+export function VaultSearch() {
+  return (
+    <Suspense fallback={<div className="h-10 w-full max-w-lg bg-muted animate-pulse rounded-md" />}>
+      <SearchInput />
+    </Suspense>
   );
 }
