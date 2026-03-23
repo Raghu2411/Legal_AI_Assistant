@@ -72,6 +72,23 @@ export function ReviewStudio({ document: doc, initialAnalysis, documentText, sca
     }
   }, [analysis, doc.review_status, isScanning, handleStartScan]);
 
+  const handleSaveContent = useCallback(async (content: string) => {
+    setIsSaving(true);
+    try {
+      const result = await saveDocumentContent(doc.id, content);
+      if (result.success) {
+        lastSavedContent.current = content;
+      } else {
+        alert("Failed to save: " + result.error);
+      }
+    } catch (err: any) {
+      console.error("Failed to save content", err);
+      alert("An error occurred while saving: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [doc.id]);
+
   const handleAcceptRewrite = async () => {
     if (!selectedRisk || !editorRef.current) return;
 
@@ -242,7 +259,7 @@ export function ReviewStudio({ document: doc, initialAnalysis, documentText, sca
     </div>
   );
 
-  const centerPane = (
+  const renderCenterPane = () => (
     <div className="flex flex-col h-full">
       <div className="px-4 py-2 border-b border-border bg-background flex items-center justify-between">
         <div className="flex items-center gap-2 overflow-hidden">
@@ -301,7 +318,7 @@ export function ReviewStudio({ document: doc, initialAnalysis, documentText, sca
     <>
       <ThreePaneLayout 
         leftPane={leftPane}
-        centerPane={centerPane}
+        centerPane={renderCenterPane()}
         rightPane={rightPane}
       />
       
