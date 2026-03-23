@@ -2,19 +2,20 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 interface Client {
   id: string;
   name: string;
 }
 
-export function ClientFilter({ clients }: { clients: Client[] }) {
+function ClientFilterInternal({ clients }: { clients: Client[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedClient = searchParams.get("clientId") || "all";
+  const selectedClient = searchParams?.get("clientId") || "all";
 
   const handleClientChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || "");
     if (value === "all") {
       params.delete("clientId");
     } else {
@@ -40,5 +41,13 @@ export function ClientFilter({ clients }: { clients: Client[] }) {
         </SelectContent>
       </Select>
     </div>
+  );
+}
+
+export function ClientFilter({ clients }: { clients: Client[] }) {
+  return (
+    <Suspense fallback={<div className="h-10 w-[280px] bg-muted animate-pulse rounded-md" />}>
+      <ClientFilterInternal clients={clients} />
+    </Suspense>
   );
 }
